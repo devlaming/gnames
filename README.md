@@ -80,7 +80,7 @@ vDiags1000=np.sort(gsimulator.ComputeDiagsGRM())
 plt.plot(np.vstack((vDiags0,vDiags1000)).T)
 ```
 
-Please observe that this code may take between five and twenty minutes to run, as it simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
+:warning: This code may take between five and twenty minutes to run, as it simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
 
 The plot at the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line).
 
