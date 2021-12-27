@@ -1,6 +1,6 @@
 # GNAMES (Genetic-Nurture and Assortative-Mating-Effects Simulator) `beta v0.1`
 
-`gnames` is a Python 3.x package for efficient simulation of multigenerational data under assortative mating and genetic nurture.
+`gnames` is a Python 3.x package for efficient simulation of multigenerational data under assortative mating and genetic nurture effects.
 
 ## Installation
 
