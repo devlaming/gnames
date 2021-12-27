@@ -78,6 +78,7 @@ gsimulator.Simulate(T)
 vDiags1000=np.sort(gsimulator.ComputeDiagsGRM())
 
 plt.plot(np.vstack((vDiags0,vDiags1000)).T)
+plt.savefig('diagsGRM.pdf')
 ```
 
 :warning: This code may take between five and twenty minutes to run, as it simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
