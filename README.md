@@ -96,7 +96,19 @@ Already up to date.
 ```
 otherwise, you will see `git` output similar to 
 ```
-tba
+remote: Enumerating objects: 8, done.
+remote: Counting objects: 100% (8/8), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 6 (delta 2), reused 6 (delta 2), pack-reused 0
+Unpacking objects: 100% (6/6), 2.82 KiB | 240.00 KiB/s, done.
+From https://github.com/devlaming/gnames
+   481a4bf..fddd8cc  main       -> origin/main
+Updating 481a4bf..fddd8cc
+Fast-forward
+ README.md | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ gnames.py |  26 ++++++++++++-
+ 2 files changed, 153 insertions(+), 1 deletion(-)
+ create mode 100644 README.md
 ```
 which tells you which files were changed.
 
