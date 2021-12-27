@@ -1,3 +1,5 @@
+import time
+import pandas as pd
 import numpy as np
 
 class gnames:
@@ -202,7 +204,7 @@ class gnames:
         self.vTau1=1-(vAF**2)
     
     def __draw_betas(self):
-        print('Drawing true SNP effects (betas)')
+        print('Drawing true SNP effects')
         vScaling=(2*self.vAF0*(1-self.vAF0))**(-0.5)
         self.vBetaY=self.rng.normal(size=self.iM)*vScaling
         self.vBetaAM=self.dRhoG*self.vBetaY+\
@@ -355,3 +357,25 @@ class gnames:
         iMkeep=self.iM-iMdrop
         vDiag=(vDiagAll-vDiagDrop)/iMkeep
         return vDiag
+
+    def Test():
+        """
+        Function to test if gnames works properly
+        """
+        iN=1000
+        iM=10000
+        iT=2
+        dTimeStart=time.time()
+        print('Test of gnames with '+str(iN)+' founders and '+str(iM)+' SNPs')
+        print('For '+str(iT)+' offspring generations')
+        print('With 2 children per mating pair')
+        print('Initialising simulator')
+        simulator=gnames(iN,iM)
+        print('Highest diagonal element of GRM for founders = '+\
+              str(round(max(simulator.ComputeDiagsGRM()),3)))
+        print('Simulating data for '+str(iT)+' subsequent generations')
+        simulator.Simulate(iT)
+        print('Highest diagonal element of GRM after '+str(iT)+\
+              ' generations = '+str(round(max(simulator.ComputeDiagsGRM()),3)))
+        dTime=time.time()-dTimeStart
+        print("Runtime: "+str(round(dTime,3))+" seconds")
