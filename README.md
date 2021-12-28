@@ -35,25 +35,16 @@ Drawing genotypes founders (=generation 0)
 -> block 1 out of 1
 Drawing traits generation 0
 Performing assortative mating generation 0
--> for group 1 out of 1
 Highest diagonal element of GRM for founders = 1.042
 Simulating data for 2 subsequent generations
-Drawing genotypes children for generation 1
--> for set of children 1 out of 2
--> for set of children 2 out of 2
+Drawing genotypes generation 1
 Drawing traits generation 1
 Performing assortative mating generation 1
--> for group 1 out of 2
--> for group 2 out of 2
-Drawing genotypes children for generation 2
--> for set of children 1 out of 2
--> for set of children 2 out of 2
+Drawing genotypes generation 2
 Drawing traits generation 2
 Performing assortative mating generation 2
--> for group 1 out of 2
--> for group 2 out of 2
 Highest diagonal element of GRM after 2 generations = 1.043
-Runtime: 1.365 seconds
+Runtime: 1.361 seconds
 ```
 
 This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. The highest element of the diagonal of the GRM has increased from 1.042 to 1.043 over the two generations.
