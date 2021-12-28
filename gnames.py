@@ -307,7 +307,6 @@ class gnames:
         self.mGM=np.empty((int(iC*self.iN/2),self.iM))
         self.mGF=np.empty((int(iC*self.iN/2),self.iM))
         for i in range(iC):
-            print('-> for group '+str(i+1)+' out of '+str(iC))
             vInd=self.rng.permutation(self.iN)
             vIndM=vInd[0:int(self.iN/2)]
             vIndF=vInd[int(self.iN/2):]
