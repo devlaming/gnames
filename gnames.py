@@ -240,7 +240,7 @@ class gnames:
             print('-> block '+str(i+1)+' out of '+str(iT))
             self.__draw_g0_rows(iSN*i,iSN)
         if iR>0:
-            print('Block '+str(iT)+' out of '+str(iT))
+            print('-> block '+str(iT)+' out of '+str(iT))
             self.__draw_g0_rows(iSN*iB,iR)
     
     def __draw_g0_rows(self,iNstart,iNadd):
@@ -263,7 +263,7 @@ class gnames:
         self.mG[0,iNstart:iNstart+iNadd,iMstart:iMstart+iMadd]=mThisG
     
     def __mate(self):
-        print('Drawing genotypes children for generation '+str(self.iT))
+        print('Drawing genotypes generation '+str(self.iT))
         self.iN=self.mGM.shape[0]
         self.mG=np.empty((self.iC,self.iN,self.iM),dtype=np.int8)
         mCM=np.zeros((self.iN,self.iM),dtype=np.int8)
@@ -271,7 +271,6 @@ class gnames:
         mCM[self.mGM==2]=1
         mCF[self.mGF==2]=1
         for i in range(self.iC):
-            print('-> for set of children '+str(i+1)+' out of '+str(self.iC))
             mGC=mCM+mCF
             mGC[self.mGM==1]+=\
                 (self.rng.uniform(size=((self.mGM==1).sum()))>0.5)
