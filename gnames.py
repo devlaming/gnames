@@ -224,7 +224,7 @@ class gnames:
         self.__match()
     
     def __draw_g0(self):
-        print('Drawing genotypes founders')
+        print('Drawing genotypes founders (=generation 0)')
         if self.iSN==0:
             iSN=self.iN
         else:

@@ -31,7 +31,7 @@ With 2 children per mating pair
 Initialising simulator
 Drawing allele frequencies SNPs founders
 Drawing true SNP effects
-Drawing genotypes founders
+Drawing genotypes founders (=generation 0)
 -> block 1 out of 1
 Drawing traits generation 0
 Performing assortative mating generation 0
