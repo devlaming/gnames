@@ -212,19 +212,17 @@ class gnames:
         self.vBetaGN=self.rng.normal(size=self.iM)*vScaling
     
     def __draw_gen0(self):
-        self.iT=0
         self.__draw_g0()
         self.__draw_y()
-        self.__match()
     
     def __draw_next_gen(self):
-        self.iT+=1
+        self.__match()
         self.__mate()
         self.__draw_y()
-        self.__match()
     
     def __draw_g0(self):
         print('Drawing genotypes founders (=generation 0)')
+        self.iT=0
         if self.iSN==0:
             iSN=self.iN
         else:
@@ -263,6 +261,7 @@ class gnames:
         self.mG[0,iNstart:iNstart+iNadd,iMstart:iMstart+iMadd]=mThisG
     
     def __mate(self):
+        self.iT+=1
         print('Drawing genotypes generation '+str(self.iT))
         self.iN=self.mGM.shape[0]
         self.mG=np.empty((self.iC,self.iN,self.iM),dtype=np.int8)
@@ -321,7 +320,7 @@ class gnames:
                 self.mYGN[i,vIndM]+self.mYGN[i,vIndF]
             self.mGM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndM]
             self.mGF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndF]
-    
+        
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
         Compute diagonals of the GRM for the current generation
