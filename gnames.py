@@ -320,7 +320,7 @@ class gnames:
                 self.mYGN[i,vIndM]+self.mYGN[i,vIndF]
             self.mGM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndM]
             self.mGF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndF]
-        
+    
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
         Compute diagonals of the GRM for the current generation
@@ -354,7 +354,7 @@ class gnames:
         iMkeep=self.iM-iMdrop
         vDiag=(vDiagAll-vDiagDrop)/iMkeep
         return vDiag
-
+    
     def Test():
         """
         Function to test if gnames works properly
