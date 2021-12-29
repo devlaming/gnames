@@ -80,6 +80,8 @@ class gnames:
         SNPs with a minor allele frequency below the given threshold
     '''
     dTooHighMAF=0.45
+    tIDs=('FID','IID')
+    lPheno=['Y']
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
                  dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
                      iSeed=502421368):
@@ -303,8 +305,8 @@ class gnames:
         if self.iT>0:
             iC=self.iC
         self.vYGNold=np.empty((int(iC*self.iN/2)))
-        self.mGM=np.empty((int(iC*self.iN/2),self.iM))
-        self.mGF=np.empty((int(iC*self.iN/2),self.iM))
+        self.mGM=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
+        self.mGF=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
         for i in range(iC):
             vInd=self.rng.permutation(self.iN)
             vIndM=vInd[0:int(self.iN/2)]
@@ -320,6 +322,36 @@ class gnames:
                 self.mYGN[i,vIndM]+self.mYGN[i,vIndF]
             self.mGM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndM]
             self.mGF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndF]
+    
+    def __assign_ids(self):
+        if self.iT<1:
+            raise SyntaxError('Cannot assign IDs for generation 0')
+        self.lSNPs=['SNP_'+str(i+1) for i in range(self.iM)]
+        iF=self.mGM.shape[0]
+        self.lFID=['Generation'+str(self.iT-1)+'_Family'+str(i+1)\
+              for i in range(iF)]
+        self.lIM=['Mother']*iF
+        self.lIF=['Father']*iF
+        self.lIC=['']*self.iC
+        for i in range(self.iC):
+            self.lIC[i]=['Child'+str(i+1)]*iF
+    
+    def CreateDataFrames(self):
+        if self.iT<1:
+            raise SyntaxError('Cannot create DataFrames for generation 0')
+        self.__assign_ids()
+        miM=pd.MultiIndex.from_arrays([self.lFID,self.lIM],names=gnames.tIDs)
+        miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
+        dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
+        dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
+        dfY=pd.DataFrame()
+        for i in range(self.iC):
+            miC=pd.MultiIndex.from_arrays([self.lFID,self.lIC[i]],\
+                                          names=gnames.tIDs)
+            dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
+            dfY=dfY.append(pd.DataFrame(self.mY[i],miC,gnames.lPheno))
+        self.dfG=dfG
+        self.dfY=dfY
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
