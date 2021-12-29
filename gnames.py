@@ -328,7 +328,7 @@ class gnames:
             raise SyntaxError('Cannot assign IDs for generation 0')
         self.lSNPs=['SNP_'+str(i+1) for i in range(self.iM)]
         iF=self.mGM.shape[0]
-        self.lFID=['Generation'+str(self.iT-1)+'_Family'+str(i+1)\
+        self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
               for i in range(iF)]
         self.lIM=['Mother']*iF
         self.lIF=['Father']*iF
