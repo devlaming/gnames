@@ -27,6 +27,7 @@ This command should yield output along the following lines:
 ```
 Test of gnames with 1000 founders and 10000 SNPs
 For 2 offspring generations
+With heritability of assortative-mating trait 100%
 With 2 children per mating pair
 Initialising simulator
 Drawing allele frequencies SNPs founders
@@ -42,11 +43,11 @@ Drawing traits generation 1
 Performing assortative mating generation 1
 Drawing genotypes generation 2
 Drawing traits generation 2
-Highest diagonal element of GRM after 2 generations = 1.043
-Runtime: 1.302 seconds
+Highest diagonal element of GRM after 2 generations = 1.045
+Runtime: 1.235 seconds
 ```
 
-This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. The highest element of the diagonal of the GRM has increased from 1.042 to 1.043 over the two generations.
+This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. The whole simulation took about 1.2 seconds. The highest element of the diagonal of the GRM has increased from 1.042 to 1.045 over the two generations.
 
 ## Tutorial
 
