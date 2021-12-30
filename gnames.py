@@ -336,7 +336,7 @@ class gnames:
         for i in range(self.iC):
             self.lIC[i]=['Child'+str(i+1)]*iF
     
-    def CreateDataFrames(self):
+    def __create_dataframes(self):
         if self.iT<1:
             raise SyntaxError('Cannot create DataFrames for generation 0')
         self.__assign_ids()
