@@ -354,11 +354,18 @@ class gnames:
         self.dfY=dfY
     
     def PerformGWAS(self):
+        if self.iT<1:
+            raise SyntaxError('Cannot perform GWAS for generation 0')
         vY=self.mY-self.mY.mean()
         vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
-        vXTX=((self.mG**2).sum(axis=(0,1)))-\
-            self.iN*((self.mG.mean(axis=(0,1)))**2)
+        vXTX=(self.mG**2).sum(axis=(0,1))-\
+            self.mG.shape[0]*self.mG.shape[1]*((self.mG.mean(axis=(0,1)))**2)
         self.vBetaGWAS=vXTY/vXTX
+        vY=self.mY-self.mY.mean(axis=0)[None,:]
+        vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
+        vXTX=(((self.mG**2).sum(axis=0))-\
+            self.mG.shape[0]*((self.mG.mean(axis=0))**2)).sum(axis=0)
+        self.vBetaWF=vXTY/vXTX
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
