@@ -291,10 +291,10 @@ class gnames:
         mEY=self.rng.normal(size=(self.iC,self.iN))
         mEAM=self.dRhoE*mEY+\
             ((1-self.dRhoE**2)**0.5)*self.rng.normal(size=(self.iC,self.iN))
-        mGY=(mGY-(mGY.mean(axis=1)[:,None]))/(mGY.std(axis=1)[:,None])
-        mGAM=(mGAM-(mGAM.mean(axis=1)[:,None]))/(mGAM.std(axis=1)[:,None])
-        mEY=(mEY-(mEY.mean(axis=1)[:,None]))/(mEY.std(axis=1)[:,None])
-        mEAM=(mEAM-(mEAM.mean(axis=1)[:,None]))/(mEAM.std(axis=1)[:,None])
+        mGY=(mGY-mGY.mean())/mGY.std()
+        mGAM=(mGAM-mGAM.mean())/mGAM.std()
+        mEY=(mEY-mEY.mean())/mEY.std()
+        mEAM=(mEAM-mEAM.mean())/mEAM.std()
         self.mY=(self.dHsqY**0.5)*mGY+((1-self.dHsqY)**0.5)*mEY\
             +vYGNold[None,:]
         self.mYAM=(self.dHsqAM**0.5)*mGAM+((1-self.dHsqAM)**0.5)*mEAM
@@ -353,6 +353,13 @@ class gnames:
         self.dfG=dfG
         self.dfY=dfY
     
+    def PerformGWAS(self):
+        vY=self.mY-self.mY.mean()
+        vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
+        vXTX=((self.mG**2).sum(axis=(0,1)))-\
+            self.iN*((self.mG.mean(axis=(0,1)))**2)
+        self.vBetaGWAS=vXTY/vXTX
+    
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
         Compute diagonals of the GRM for the current generation
@@ -371,18 +378,18 @@ class gnames:
         if dMAF>=gnames.dTooHighMAF:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
-        vEAF=np.vstack(self.mG).mean(axis=0)/2
+        mG=np.vstack(self.mG)
+        vEAF=mG.mean(axis=0)/2
         iMdrop=0
         vDiagDrop=0
         if dMAF>0:
             vDrop=(((vEAF<dMAF)+(vEAF>=(1-dMAF)))>=1)
             iMdrop=vDrop.sum()
             vEAF[vDrop]=0.5
-            vDiagDrop=(((np.vstack(self.mG)[:,vDrop]-1)/(0.5**0.5))**2)\
+            vDiagDrop=(((mG[:,vDrop]-1)/(0.5**0.5))**2)\
                 .sum(axis=1).ravel()
-        vDiagAll=(((np.vstack(self.mG)-2*vEAF[None,None,:])\
-                   /(((2*vEAF*(1-vEAF))**0.5)[None,None,:]))**2)\
-            .sum(axis=2).ravel()
+        vDiagAll=(((mG-2*vEAF[None,:])/\
+                   (((2*vEAF*(1-vEAF))**0.5)[None,:]))**2).sum(axis=1).ravel()
         iMkeep=self.iM-iMdrop
         vDiag=(vDiagAll-vDiagDrop)/iMkeep
         return vDiag
@@ -394,12 +401,14 @@ class gnames:
         iN=1000
         iM=10000
         iT=2
+        dHsqAM=1
         dTimeStart=time.time()
         print('Test of gnames with '+str(iN)+' founders and '+str(iM)+' SNPs')
         print('For '+str(iT)+' offspring generations')
+        print('With heritability of assortative-mating trait 100%')
         print('With 2 children per mating pair')
         print('Initialising simulator')
-        simulator=gnames(iN,iM)
+        simulator=gnames(iN,iM,dHsqAM=dHsqAM)
         print('Highest diagonal element of GRM for founders = '+\
               str(round(max(simulator.ComputeDiagsGRM()),3)))
         print('Simulating data for '+str(iT)+' subsequent generations')
