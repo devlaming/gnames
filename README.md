@@ -75,11 +75,15 @@ vDiags1000=np.sort(gsimulator.ComputeDiagsGRM())
 
 plt.plot(np.vstack((vDiags0,vDiags1000)).T)
 plt.savefig('diagsGRM.pdf')
+
+gsimulator.MakeBed('n1000.m10000.t1000')
 ```
 
 :warning: This code may take between five and twenty minutes to run, as it simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
 
 The plot at the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see the diagonal elements of the GRM have considerably shifted away from one over the generations.
+
+Finally, this bit of code also shows how `gnames` can be used to create PLINK binary files for the last generation. These files are here named `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam`.
 
 ## Updating `gnames`
 
