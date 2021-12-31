@@ -320,6 +320,8 @@ class gnames:
         if self.iT>0:
             iC=self.iC
         self.vYGNold=np.empty((int(iC*self.iN/2)))
+        self.vYM=np.empty((int(iC*self.iN/2)))
+        self.vYF=np.empty((int(iC*self.iN/2)))
         self.mGM=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
         self.mGF=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
         for i in range(iC):
@@ -335,6 +337,10 @@ class gnames:
             vIndF=vIndF[self.mYAM[i,vIndF].argsort()][vX2rank]
             self.vYGNold[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
                 self.mYGN[i,vIndM]+self.mYGN[i,vIndF]
+            self.vYM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
+                self.mY[i,vIndM]
+            self.vYF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
+                self.mY[i,vIndF]
             self.mGM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndM]
             self.mGF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndF]
     
@@ -358,8 +364,9 @@ class gnames:
         miM=pd.MultiIndex.from_arrays([self.lFID,self.lIM],names=gnames.tIDs)
         miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
         dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
+        dfY=pd.DataFrame(self.vYM,miM,gnames.lPheno)
         dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
-        dfY=pd.DataFrame()
+        dfY=dfY.append(pd.DataFrame(self.vYF,miF,gnames.lPheno))
         for i in range(self.iC):
             miC=pd.MultiIndex.from_arrays([self.lFID,self.lIC[i]],\
                                           names=gnames.tIDs)
@@ -369,18 +376,18 @@ class gnames:
         self.dfY=dfY
     
     def __write_fam(self,sName):
-        ltID=self.dfG.index.to_list()
         with open(sName+gnames.sFamExt,'w') as oFile:
-            for j in range(len(ltID)):
-                sFID=ltID[j][0]
-                sIID=ltID[j][1]
+            for j in range(len(self.dfG)):
+                sFID=self.dfG.index[j][0]
+                sIID=self.dfG.index[j][1]
                 if sIID!=gnames.sMat and sIID!=gnames.sPat:
                     sMID=gnames.sMat
                     sPID=gnames.sPat
                 else:
                     sMID='0'
                     sPID='0'
-                sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t-9\n'
+                dY=self.dfY.loc[self.dfG.index[j]].values[0]
+                sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t'+str(dY)+'\n'
                 oFile.write(sIND)
     
     def __write_bim(self,sName):
