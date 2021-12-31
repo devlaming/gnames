@@ -78,6 +78,12 @@ class gnames:
     ComputeDiagsGRM(dMAF=0.01)
         Compute diagonals of the GRM for the current generation, excluding
         SNPs with a minor allele frequency below the given threshold
+    
+    MakeBed(sName='genotypes')
+        Export genotypes to PLINK binary file format
+    
+    PerformGWAS()
+        Perform classical GWAS and within-family GWAS based on offspring data
     '''
     dTooHighMAF=0.45
     tIDs=('FID','IID')
@@ -409,12 +415,26 @@ class gnames:
                     oFile.write(bytes(bytearray([byteThisG])))
     
     def MakeBed(self,sName='genotypes'):
+        """
+        Export genotypes to PLINK binary file format
+        
+        Attributes
+        ----------
+        sName : string, optional
+            prefix for PLINK binary files to generate; default='genotypes'
+        """
+        if self.iT<1:
+            raise SyntaxError('Cannot export to PLINK binary format for '+\
+                              'generation 0')
         self.__create_dataframes()
         self.__write_fam(sName)
         self.__write_bim(sName)
         self.__write_bed(sName)
     
     def PerformGWAS(self):
+        """
+        Perform classical GWAS and within-family GWAS based on offspring data
+        """
         if self.iT<1:
             raise SyntaxError('Cannot perform GWAS for generation 0')
         vY=self.mY-self.mY.mean()
