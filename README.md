@@ -44,10 +44,15 @@ Performing assortative mating generation 1
 Drawing genotypes generation 2
 Drawing traits generation 2
 Highest diagonal element of GRM after 2 generations = 1.045
-Runtime: 1.235 seconds
+Writing PLINK binary files (genotypes.bed, .bim, .fam)
+Runtime: 1.31 seconds
 ```
 
-This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. The whole simulation took about 1.2 seconds. The highest element of the diagonal of the GRM has increased from 1.042 to 1.045 over the two generations.
+This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM has increased from 1.042 to 1.045 over the two generations.
+
+Finally, `gnames` created set of PLINK binary files: `genotypes.bed`, `genotypes.bim`, `genotypes.fam`. These PLINK binary files can readily be used for follow-up analyses using tools such as [PLINK](https://www.cog-genomics.org/plink/).
+
+The whole simulation and data export took less than two seconds.
 
 ## Tutorial
 
