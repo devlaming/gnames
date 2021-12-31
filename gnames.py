@@ -82,6 +82,15 @@ class gnames:
     dTooHighMAF=0.45
     tIDs=('FID','IID')
     lPheno=['Y']
+    sMat='Mother'
+    sPat='Father'
+    sBedExt='.bed'
+    sBimExt='.bim'
+    sFamExt='.fam'
+    binBED1=bytes(bytearray([0b01101100]))
+    binBED2=bytes(bytearray([0b00011011]))
+    binBED3=bytes(bytearray([0b00000001]))
+    iNperByte=4
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
                  dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
                      iSeed=502421368):
@@ -330,8 +339,8 @@ class gnames:
         iF=self.mGM.shape[0]
         self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
               for i in range(iF)]
-        self.lIM=['Mother']*iF
-        self.lIF=['Father']*iF
+        self.lIM=[gnames.sMat]*iF
+        self.lIF=[gnames.sPat]*iF
         self.lIC=['']*self.iC
         for i in range(self.iC):
             self.lIC[i]=['Child'+str(i+1)]*iF
@@ -352,6 +361,58 @@ class gnames:
             dfY=dfY.append(pd.DataFrame(self.mY[i],miC,gnames.lPheno))
         self.dfG=dfG
         self.dfY=dfY
+    
+    def __write_fam(self,sName):
+        ltID=self.dfG.index.to_list()
+        with open(sName+gnames.sFamExt,'w') as oFile:
+            for j in range(len(ltID)):
+                sFID=ltID[j][0]
+                sIID=ltID[j][1]
+                if sIID!=gnames.sMat and sIID!=gnames.sPat:
+                    sMID=gnames.sMat
+                    sPID=gnames.sPat
+                else:
+                    sMID='0'
+                    sPID='0'
+                sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t-9\n'
+                oFile.write(sIND)
+    
+    def __write_bim(self,sName):
+        lSNPs=self.dfG.columns.to_list()
+        with open(sName+gnames.sBimExt,'w') as oFile:
+            for j in range(self.iM):
+                sSNP='0\t'+lSNPs[j]+'0\t'+str(j+1)+'\tA\tC\n'
+                oFile.write(sSNP)
+    
+    def __write_bed(self,sName):
+        with open(sName+gnames.sBedExt,'wb') as oFile:
+            oFile.write(gnames.binBED1)
+            oFile.write(gnames.binBED2)
+            oFile.write(gnames.binBED3)
+            iN=self.dfG.shape[0]
+            for j in range(self.iM):
+                vG=self.dfG.values[:,j]
+                for i in range(0,iN,gnames.iNperByte):
+                    vThisG=vG[i:i+gnames.iNperByte]
+                    byteThisG=0b00000000
+                    for k in range(len(vThisG)):
+                        iG=vThisG[k]
+                        if iG==0:
+                            bitsG=0b11
+                        elif iG==1:
+                            bitsG=0b10
+                        elif iG==2:
+                            bitsG=0b00
+                        else:
+                            bitsG=0b01
+                        byteThisG|=bitsG<<(k*2)
+                    oFile.write(bytes(bytearray([byteThisG])))
+    
+    def MakeBed(self,sName='genotypes'):
+        self.__create_dataframes()
+        self.__write_fam(sName)
+        self.__write_bim(sName)
+        self.__write_bed(sName)
     
     def PerformGWAS(self):
         if self.iT<1:
@@ -423,4 +484,4 @@ class gnames:
         print('Highest diagonal element of GRM after '+str(iT)+\
               ' generations = '+str(round(max(simulator.ComputeDiagsGRM()),3)))
         dTime=time.time()-dTimeStart
-        print("Runtime: "+str(round(dTime,3))+" seconds")
+        print('Runtime: '+str(round(dTime,3))+' seconds')
