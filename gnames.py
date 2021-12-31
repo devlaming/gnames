@@ -93,9 +93,9 @@ class gnames:
     sBedExt='.bed'
     sBimExt='.bim'
     sFamExt='.fam'
-    binBED1=bytes(bytearray([0b01101100]))
-    binBED2=bytes(bytearray([0b00011011]))
-    binBED3=bytes(bytearray([0b00000001]))
+    binBED1=bytes([0b01101100])
+    binBED2=bytes([0b00011011])
+    binBED3=bytes([0b00000001])
     iNperByte=4
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
                  dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
@@ -398,28 +398,23 @@ class gnames:
                 oFile.write(sSNP)
     
     def __write_bed(self,sName):
+        iN=self.dfG.shape[0]
+        iB=int(iN/gnames.iNperByte)
+        iR=iN%gnames.iNperByte
+        iBT=iB+(iR>0)
+        mG=np.empty((iBT*gnames.iNperByte,self.iM),dtype=np.uint8)
+        mG[0:((iB*gnames.iNperByte)+iR)]=2*(2-self.dfG.values)
+        mG[mG==4]=3
+        mG[((iB*gnames.iNperByte)+iR):iBT*gnames.iNperByte]=0
+        vBase=np.array([2**0,2**2,2**4,2**6]*iBT,dtype=np.uint8)
+        mBytes=(mG*vBase[:,None]).reshape(iBT,gnames.iNperByte,self.iM)\
+            .sum(axis=1).astype(np.uint8)
+        vBytes=mBytes.T.ravel()
         with open(sName+gnames.sBedExt,'wb') as oFile:
             oFile.write(gnames.binBED1)
             oFile.write(gnames.binBED2)
             oFile.write(gnames.binBED3)
-            iN=self.dfG.shape[0]
-            for j in range(self.iM):
-                vG=self.dfG.values[:,j]
-                for i in range(0,iN,gnames.iNperByte):
-                    vThisG=vG[i:i+gnames.iNperByte]
-                    byteThisG=0b00000000
-                    for k in range(len(vThisG)):
-                        iG=vThisG[k]
-                        if iG==0:
-                            bitsG=0b11
-                        elif iG==1:
-                            bitsG=0b10
-                        elif iG==2:
-                            bitsG=0b00
-                        else:
-                            bitsG=0b01
-                        byteThisG|=bitsG<<(k*2)
-                    oFile.write(bytes(bytearray([byteThisG])))
+            oFile.write(bytes(vBytes))
     
     def MakeBed(self,sName='genotypes'):
         """
@@ -511,4 +506,6 @@ class gnames:
         print('Highest diagonal element of GRM after '+str(iT)+\
               ' generations = '+str(round(max(simulator.ComputeDiagsGRM()),3)))
         dTime=time.time()-dTimeStart
+        print('Writing PLINK binary files (genotypes.bed, .bim, .fam)')
+        simulator.MakeBed()
         print('Runtime: '+str(round(dTime,3))+' seconds')
