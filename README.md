@@ -4,7 +4,7 @@
 
 ## Installation
 
-:warning: Before downloading `gnames`, please make sure [Git](https://git-scm.com/downloads) and [Anaconda](https://www.anaconda.com/) with **Python 3.x** are installed. For now, `gnames` only requires the packages `numpy`, `pandas` and `time`.
+:warning: Before downloading `gnames`, please make sure [Git](https://git-scm.com/downloads) and [Anaconda](https://www.anaconda.com/) with **Python 3.x** are installed.
 
 In order to download `gnames`, open a command-line interface by starting [Anaconda Prompt](https://docs.anaconda.com/anaconda/user-guide/getting-started/), navigate to your working directory, and clone the `gnames` repository using the following command:
 
@@ -17,8 +17,19 @@ Now, enter the newly created `gnames` directory using:
 ```
 cd gnames
 ```
-You can now run the following commands, to test if `gnames` is functioning properly:
 
+Then run the following commands to create a custom Python environment which has all of `gnames`'s dependencies (i.e. an environment that has packages `numpy`, `pandas`, and `tqdm` pre-installed):
+
+```
+conda env create --file gnames.yml
+conda activate gnames
+```
+
+(or `activate gnames` instead of `conda activate gnames` on some machines).
+
+In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `gnames` only requires Python 3.x with the packages `numpy`, `pandas`, and `tqdm` installed.
+
+You can now run the following commands, to test if `gnames` is functioning properly:
 ```
 python -c "from gnames import gnames; gnames.Test()"
 ```
