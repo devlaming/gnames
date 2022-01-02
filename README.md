@@ -75,8 +75,9 @@ import matplotlib.pyplot as plt
 N=1000
 M=10000
 T=1000
+F=0.4
 
-gsimulator=gnames(N,M)
+gsimulator=gnames(N,M,dMAF0=F)
 vDiags0=np.sort(gsimulator.ComputeDiagsGRM())
 
 gsimulator.Simulate(T)
@@ -90,7 +91,7 @@ gsimulator.PerformGWAS('n1000.m10000.t1000')
 gsimulator.MakeBed('n1000.m10000.t1000')
 ```
 
-:warning: This code may take between five and twenty minutes to run, as the code simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
+:warning: This code may take about ten minutes to run, as the code simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
 
 The plot that is created near the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see that the diagonal elements of the GRM have considerably shifted away from one over the generations.
 
