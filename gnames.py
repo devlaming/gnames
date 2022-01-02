@@ -455,11 +455,13 @@ class gnames:
         vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
         vXTX=(self.mG**2).sum(axis=(0,1))-\
             self.mG.shape[0]*self.mG.shape[1]*((self.mG.mean(axis=(0,1)))**2)
+        vXTX[vXTX<np.finfo(float).eps]=np.nan
         self.vBetaGWAS=vXTY/vXTX
         vY=self.mY-self.mY.mean(axis=0)[None,:]
         vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
         vXTX=(((self.mG**2).sum(axis=0))-\
             self.mG.shape[0]*((self.mG.mean(axis=0))**2)).sum(axis=0)
+        vXTX[vXTX<np.finfo(float).eps]=np.nan
         self.vBetaWF=vXTY/vXTX
     
     def ComputeDiagsGRM(self,dMAF=0.01):
