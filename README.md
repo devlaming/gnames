@@ -36,38 +36,31 @@ python -c "from gnames import gnames; gnames.Test()"
 
 This command should yield output along the following lines:
 ```
-Test of gnames with 1000 founders and 10000 SNPs
-For 2 offspring generations
-With heritability of assortative-mating trait 100%
-With 2 children per mating pair
-Initialising simulator
-Drawing allele frequencies SNPs founders
+TEST OF GNAMES
+With 1000 founders, 10,000 SNPs, and two children per pair
+INITIALISING SIMULATOR
+Drawing alleles for SNPs of founders
+Drawing allele frequencies for SNPs of founders
 Drawing true SNP effects
 Drawing genotypes founders (=generation 0)
-100%|██████████████████████████████████| 1/1 [00:00<00:00,  5.50it/s]
-Drawing traits generation 0
-Highest diagonal element of GRM for founders = 1.042
-Simulating data for 2 subsequent generations
-Performing assortative mating generation 0
-Drawing genotypes generation 1
-Drawing traits generation 1
-Performing assortative mating generation 1
-Drawing genotypes generation 2
-Drawing traits generation 2
-Highest diagonal element of GRM after 2 generations = 1.045
+100%|█████████████████████████████████| 1/1 [00:00<00:00,  6.43it/s]
+Highest diagonal element of GRM for founders = 1.056
+SIMULATING 10 GENERATIONS
+100%|███████████████████████████████| 10/10 [00:04<00:00,  2.44it/s]
+Highest diagonal element of GRM after 10 generations = 1.086
 Writing PLINK binary files (genotypes.bed, .bim, .fam)
-Runtime: 1.353 seconds
+Runtime: 4.725 seconds
 ```
 
-This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated two generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM has increased from 1.042 to 1.045 over the two generations.
+This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM has increased from 1.056 to 1.086 over the ten generations.
 
-Finally, `gnames` created set of PLINK binary files: `genotypes.bed`, `genotypes.bim`, `genotypes.fam`. These PLINK binary files can readily be used for follow-up analyses using tools such as [PLINK](https://www.cog-genomics.org/plink/).
+Finally, `gnames` created a set of PLINK binary files: `genotypes.bed`, `genotypes.bim`, `genotypes.fam`. These PLINK binary files can readily be used for follow-up analyses using tools such as [PLINK](https://www.cog-genomics.org/plink/).
 
-The whole simulation and data export took less than two seconds.
+The whole simulation and data export took less than five seconds.
 
 ## Tutorial
 
-Once `gnames` is up-and-running, you can simply incorporate it in your Python code, as illustrated in the following bit of Python code:
+Once `gnames` is up-and-running, you can simply incorporate the tool in your Python code, as illustrated in the following bit of Python code:
 
 ```
 from gnames import gnames
@@ -90,9 +83,9 @@ plt.savefig('diagsGRM.pdf')
 gsimulator.MakeBed('n1000.m10000.t1000')
 ```
 
-:warning: This code may take between five and twenty minutes to run, as it simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
+:warning: This code may take between five and twenty minutes to run, as the code simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
 
-The plot at the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see the diagonal elements of the GRM have considerably shifted away from one over the generations.
+The plot that is created near the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see that the diagonal elements of the GRM have considerably shifted away from one over the generations.
 
 Finally, this bit of code also shows how `gnames` can be used to create PLINK binary files for the last generation. These files are here named `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam`.
 

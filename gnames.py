@@ -210,7 +210,7 @@ class gnames:
             raise ValueError('Number of generations not integer')
         if iGenerations<1:
             raise ValueError('Number of generations non-positive')
-        for i in range(iGenerations):
+        for i in tqdm(range(iGenerations)):
             self.__draw_next_gen()
     
     def __draw_alleles(self):
@@ -294,7 +294,6 @@ class gnames:
     
     def __mate(self):
         self.iT+=1
-        print('Drawing genotypes generation '+str(self.iT))
         self.iN=self.mGM.shape[0]
         self.mG=np.empty((self.iC,self.iN,self.iM),dtype=np.int8)
         mCM=np.zeros((self.iN,self.iM),dtype=np.int8)
@@ -310,7 +309,6 @@ class gnames:
             self.mG[i,:,:]=mGC
     
     def __draw_y(self):
-        print('Drawing traits generation '+str(self.iT))
         self.mYGN=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
         vYGNold=np.zeros(self.iN)
         if self.iT>0:
@@ -330,7 +328,6 @@ class gnames:
         self.mYAM=(self.dHsqAM**0.5)*mGAM+((1-self.dHsqAM)**0.5)*mEAM
     
     def __match(self):
-        print('Performing assortative mating generation '+str(self.iT))
         iC=1
         if self.iT>0:
             iC=self.iC
@@ -503,20 +500,18 @@ class gnames:
         """
         Function to test if gnames works properly
         """
+        dTimeStart=time.time()
         iN=1000
         iM=10000
-        iT=2
+        iT=10
         dHsqAM=1
-        dTimeStart=time.time()
-        print('Test of gnames with '+str(iN)+' founders and '+str(iM)+' SNPs')
-        print('For '+str(iT)+' offspring generations')
-        print('With heritability of assortative-mating trait 100%')
-        print('With 2 children per mating pair')
-        print('Initialising simulator')
+        print('TEST OF GNAMES')
+        print('With 1000 founders, 10,000 SNPs, and two children per pair')
+        print('INITIALISING SIMULATOR')
         simulator=gnames(iN,iM,dHsqAM=dHsqAM)
         print('Highest diagonal element of GRM for founders = '+\
               str(round(max(simulator.ComputeDiagsGRM()),3)))
-        print('Simulating data for '+str(iT)+' subsequent generations')
+        print('SIMULATING '+str(iT)+' GENERATIONS')
         simulator.Simulate(iT)
         print('Highest diagonal element of GRM after '+str(iT)+\
               ' generations = '+str(round(max(simulator.ComputeDiagsGRM()),3)))
