@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 class gnames:
     '''
@@ -246,17 +247,16 @@ class gnames:
             iSN=self.iSN
         iB=int(self.iN/iSN)
         iR=(self.iN)%(iSN)
-        if iR>0:
-            iT=iB+1
-        else:
-            iT=iB
+        iBT=iB+(iR>0)
         self.mG=np.empty((1,self.iN,self.iM),dtype=np.int8)
+        tCount=tqdm(total=iBT)
         for i in range(iB):
-            print('-> block '+str(i+1)+' out of '+str(iT))
             self.__draw_g0_rows(iSN*i,iSN)
+            tCount.update(1)
         if iR>0:
-            print('-> block '+str(iT)+' out of '+str(iT))
             self.__draw_g0_rows(iSN*iB,iR)
+            tCount.update(1)
+        tCount.close()
     
     def __draw_g0_rows(self,iNstart,iNadd):
         if self.iSM==0:
