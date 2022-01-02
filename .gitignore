@@ -1,3 +1,11 @@
+# gnames and PLINK test results
+*.bed
+*.bim
+*.fam
+*.qassoc
+*.assoc
+*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
