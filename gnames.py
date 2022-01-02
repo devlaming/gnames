@@ -519,7 +519,7 @@ class gnames:
         ----------
         dMAF : float in (0,0.45), optional
             SNPs with an empirical minor-allele frequency below this threshold
-            are excluded from calculation of the GRM
+            are excluded from calculation of the diagonal of the GRM
         """
         if not(isinstance(dMAF,(int,float))):
             raise ValueError('Minor-allele-frequency threshold not a number')
