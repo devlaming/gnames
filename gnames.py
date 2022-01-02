@@ -506,7 +506,7 @@ class gnames:
         iT=10
         dHsqAM=1
         print('TEST OF GNAMES')
-        print('With 1000 founders, 10,000 SNPs, and two children per pair')
+        print('with 1000 founders, 10,000 SNPs, and two children per pair')
         print('INITIALISING SIMULATOR')
         simulator=gnames(iN,iM,dHsqAM=dHsqAM)
         print('Highest diagonal element of GRM for founders = '+\
