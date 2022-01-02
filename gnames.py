@@ -511,6 +511,32 @@ class gnames:
         dfGWAS_WF.index.name=gnames.sSNPIDs
         dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t')
     
+    def ComputeGRM(self,dMAF=0.01):
+        """
+        Compute the GRM for the current generation
+        
+        Attributes
+        ----------
+        dMAF : float in (0,0.45), optional
+            SNPs with an empirical minor-allele frequency below this threshold
+            are excluded from calculation of the GRM
+        """
+        if not(isinstance(dMAF,(int,float))):
+            raise ValueError('Minor-allele-frequency threshold not a number')
+        if dMAF<0:
+            raise ValueError('Minor-allele-frequency threshold is negative')
+        if dMAF>=gnames.dTooHighMAF:
+            raise ValueError('Minor-allele-frequency threshold is'+\
+                             ' unreasonably high')
+        vEAF=self.mG.mean(axis=(0,1))/2
+        vKeep=(((vEAF<=dMAF)+(vEAF>=(1-dMAF)))==0)
+        iM=vKeep.sum()
+        vEAF=vEAF[vKeep]
+        mX=(self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
+            (((2*vEAF*(1-vEAF))**0.5)[None,None,:])
+        mA=(np.tensordot(mX,mX,axes=(2,2)))/iM
+        return mA
+    
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
         Compute diagonal elements of the GRM for the current generation
@@ -523,26 +549,17 @@ class gnames:
         """
         if not(isinstance(dMAF,(int,float))):
             raise ValueError('Minor-allele-frequency threshold not a number')
-        if dMAF<=0:
-            raise ValueError('Minor-allele-frequency threshold is'+\
-                             ' non-positive')
+        if dMAF<0:
+            raise ValueError('Minor-allele-frequency threshold is negative')
         if dMAF>=gnames.dTooHighMAF:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         vEAF=self.mG.mean(axis=(0,1))/2
-        iMdrop=0
-        vDiagDrop=0
-        if dMAF>0:
-            vDrop=(((vEAF<dMAF)+(vEAF>=(1-dMAF)))>=1)
-            iMdrop=vDrop.sum()
-            vEAF[vDrop]=0.5
-            vDiagDrop=(((self.mG[:,:,vDrop]-1)/(0.5**0.5))**2)\
-                .sum(axis=2).ravel()
-        vDiagAll=(((self.mG-2*vEAF[None,None,:])/\
+        vKeep=(((vEAF<=dMAF)+(vEAF>=(1-dMAF)))==0)
+        vEAF=vEAF[vKeep]
+        vDiag=(((self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
                    (((2*vEAF*(1-vEAF))**0.5)[None,None,:]))**2)\
-            .sum(axis=2).ravel()
-        iMkeep=self.iM-iMdrop
-        vDiag=(vDiagAll-vDiagDrop)/iMkeep
+            .mean(axis=2).ravel()
         return vDiag
     
     def Test():
