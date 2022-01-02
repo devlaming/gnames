@@ -18,7 +18,7 @@ Now, enter the newly created `gnames` directory using:
 cd gnames
 ```
 
-Then run the following commands to create a custom Python environment which has all of `gnames`'s dependencies (i.e. an environment that has packages `numpy`, `pandas`, and `tqdm` pre-installed):
+Then run the following commands to create a custom Python environment which has all of `gnames`'s dependencies (i.e. an environment that has packages `numpy`, `pandas`, `scipy`, and `tqdm` pre-installed):
 
 ```
 conda env create --file gnames.yml
