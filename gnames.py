@@ -89,6 +89,7 @@ class gnames:
     '''
     dTooHighMAF=0.45
     tIDs=('FID','IID')
+    sSNPIDs='SNP ID'
     lPheno=['Y']
     sMat='Mother'
     sPat='Father'
@@ -474,6 +475,7 @@ class gnames:
         vP=2*t.cdf(-abs(vT),iN-1)
         dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
                             columns=self.lSNPs,index=gnames.lGWAScol).T
+        dfGWAS.index.name=gnames.sSNPIDs
         dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t')
         mY=self.mY-self.mY.mean(axis=0)[None,:]
         iC=self.mY.shape[0]
@@ -491,6 +493,7 @@ class gnames:
         vP=2*t.cdf(-abs(vT),iN-1)
         dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
                             columns=self.lSNPs,index=gnames.lGWAScol).T
+        dfGWAS_WF.index.name=gnames.sSNPIDs
         dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t')
     
     def ComputeDiagsGRM(self,dMAF=0.01):
