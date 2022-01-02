@@ -2,6 +2,7 @@ import time
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from scipy.stats import t
 
 class gnames:
     '''
@@ -83,7 +84,7 @@ class gnames:
     MakeBed(sName='genotypes')
         Export genotypes to PLINK binary file format
     
-    PerformGWAS()
+    PerformGWAS(sName='results')
         Perform classical GWAS and within-family GWAS based on offspring data
     '''
     dTooHighMAF=0.45
@@ -94,12 +95,16 @@ class gnames:
     sBedExt='.bed'
     sBimExt='.bim'
     sFamExt='.fam'
+    sGWASExt='.GWAS.classical.txt'
+    sWFExt='.GWAS.within_family.txt'
     binBED1=bytes([0b01101100])
     binBED2=bytes([0b00011011])
     binBED3=bytes([0b00000001])
     iNperByte=4
     lAlleles=['A','C','G','T']
     iPloidy=2
+    lGWAScol=['Baseline Allele','Effect Allele','Per-allele effect estimate',\
+               'Standard error','T-test statistic','P-value']
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
                  dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
                      iSeed=502421368):
@@ -445,24 +450,48 @@ class gnames:
         self.__write_bim(sName)
         self.__write_bed(sName)
     
-    def PerformGWAS(self):
+    def PerformGWAS(self,sName='results'):
         """
         Perform classical GWAS and within-family GWAS based on offspring data
+        
+        Attributes
+        ----------
+        sName : string, optional
+            prefix for GWAS files; default='results'
         """
         if self.iT<1:
             raise SyntaxError('Cannot perform GWAS for generation 0')
-        vY=self.mY-self.mY.mean()
-        vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
+        mY=self.mY-self.mY.mean()
+        iN=np.prod(self.mY.shape)
+        vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
         vXTX=(self.mG**2).sum(axis=(0,1))-\
-            self.mG.shape[0]*self.mG.shape[1]*((self.mG.mean(axis=(0,1)))**2)
+            iN*((self.mG.mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
-        self.vBetaGWAS=vXTY/vXTX
-        vY=self.mY-self.mY.mean(axis=0)[None,:]
-        vXTY=(self.mG*vY[:,:,None]).sum(axis=(0,1))
-        vXTX=(((self.mG**2).sum(axis=0))-\
-            self.mG.shape[0]*((self.mG.mean(axis=0))**2)).sum(axis=0)
+        vB=vXTY/vXTX
+        mR=mY[:,:,None]-(self.mG*vB[None,None,:])
+        vSE=((((mR**2).sum(axis=(0,1)))/(iN-1))/vXTX)**0.5
+        vT=vB/vSE
+        vP=2*t.cdf(-abs(vT),iN-1)
+        dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+                            columns=self.lSNPs,index=gnames.lGWAScol).T
+        dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t')
+        mY=self.mY-self.mY.mean(axis=0)[None,:]
+        iC=self.mY.shape[0]
+        iF=self.mY.shape[1]
+        vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
+        vXTX=(((self.mG**2).sum(axis=0))-
+            iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
-        self.vBetaWF=vXTY/vXTX
+        vB=vXTY/vXTX
+        mYhat=(self.mG*vB[None,None,:])
+        mYhat=mYhat-((mYhat.mean(axis=0))[None,:,:])
+        mR=mY[:,:,None]-mYhat
+        vSE=((((mR**2).sum(axis=(0,1)))/(iN-iF))/vXTX)**0.5
+        vT=vB/vSE
+        vP=2*t.cdf(-abs(vT),iN-1)
+        dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+                            columns=self.lSNPs,index=gnames.lGWAScol).T
+        dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t')
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
@@ -518,6 +547,10 @@ class gnames:
         print('Highest diagonal element of GRM after '+str(iT)+\
               ' generations = '+str(round(max(simulator.ComputeDiagsGRM()),3)))
         dTime=time.time()-dTimeStart
+        print('GENERATING OUTPUT')
+        print('Calculating and storing classical GWAS and within-family GWAS')
+        print('results based on offspring data last generation')
+        simulator.PerformGWAS()
         print('Writing PLINK binary files (genotypes.bed, .bim, .fam)')
         simulator.MakeBed()
         print('Runtime: '+str(round(dTime,3))+' seconds')

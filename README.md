@@ -27,7 +27,7 @@ conda activate gnames
 
 (or `activate gnames` instead of `conda activate gnames` on some machines).
 
-In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `gnames` only requires Python 3.x with the packages `numpy`, `pandas`, and `tqdm` installed.
+In case you cannot create a customised conda environment (e.g. because of insufficient user rights) or simply prefer to use Anaconda Navigator or `pip` to install packages e.g. in your base environment rather than a custom environment, please note that `gnames` only requires Python 3.x with the packages `numpy`, `pandas`, `scipy`, and `tqdm` installed.
 
 You can now run the following commands, to test if `gnames` is functioning properly:
 ```
@@ -43,20 +43,25 @@ Drawing alleles for SNPs of founders
 Drawing allele frequencies for SNPs of founders
 Drawing true SNP effects
 Drawing genotypes founders (=generation 0)
-100%|█████████████████████████████████| 1/1 [00:00<00:00,  6.43it/s]
+100%|█████████████████████████████████| 1/1 [00:00<00:00,  6.44it/s]
 Highest diagonal element of GRM for founders = 1.056
 SIMULATING 10 GENERATIONS
-100%|███████████████████████████████| 10/10 [00:04<00:00,  2.44it/s]
+100%|███████████████████████████████| 10/10 [00:04<00:00,  2.49it/s]
 Highest diagonal element of GRM after 10 generations = 1.086
+GENERATING OUTPUT
+Calculating and storing classical GWAS and within-family GWAS
+results based on offspring data last generation
 Writing PLINK binary files (genotypes.bed, .bim, .fam)
-Runtime: 4.725 seconds
+Runtime: 4.632 seconds
 ```
 
-This output shows `gnames` has simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` has simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM has increased from 1.056 to 1.086 over the ten generations.
+This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reported that the highest element of the diagonal of the GRM increased from 1.056 to 1.086 over the ten generations.
+
+In addition, `gnames` performed a classical GWAS and a within-family GWAS based on the offspring data for the last generation. Results are exported to human-readable files: `results.GWAS.classical.txt` and `results.GWAS.within_family.txt`.
 
 Finally, `gnames` created a set of PLINK binary files: `genotypes.bed`, `genotypes.bim`, `genotypes.fam`. These PLINK binary files can readily be used for follow-up analyses using tools such as [PLINK](https://www.cog-genomics.org/plink/).
 
-The whole simulation and data export took less than five seconds.
+The whole simulation, two GWASs, and export to PLINK binary files took less than five seconds.
 
 ## Tutorial
 
@@ -81,6 +86,7 @@ plt.plot(np.vstack((vDiags0,vDiags1000)).T)
 plt.savefig('diagsGRM.pdf')
 plt.close()
 
+gsimulator.PerformGWAS('n1000.m10000.t1000')
 gsimulator.MakeBed('n1000.m10000.t1000')
 ```
 
@@ -88,7 +94,9 @@ gsimulator.MakeBed('n1000.m10000.t1000')
 
 The plot that is created near the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see that the diagonal elements of the GRM have considerably shifted away from one over the generations.
 
-Finally, this bit of code also shows how `gnames` can be used to create PLINK binary files for the last generation. These files are here named `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam`.
+In addition, this bit of code shows how `gnames` can be used to calculate GWAS summary statistics based on the last generation, here yielding files named `n1000.m10000.t1000.GWAS.classical.txt` and `n1000.m10000.t1000.GWAS.within_family.txt`.
+
+Finally, the code also shows how `gnames` can be used to to create PLINK binary files for the last generation. These files are here named `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam`.
 
 ## Updating `gnames`
 
