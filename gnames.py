@@ -470,8 +470,12 @@ class gnames:
             raise ValueError('Prefix for GWAS files not a string')
         if sName=='':
             raise ValueError('Prefix for GWAS files is empty string')
+        self.__do_standard_gwas(sName)
+        self.__do_wf_gwas(sName)
+    
+    def __do_standard_gwas(self,sName):
         mY=self.mY-self.mY.mean()
-        iN=np.prod(self.mY.shape)
+        iN=int(np.prod(self.mY.shape))
         vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
         vXTX=(self.mG**2).sum(axis=(0,1))-\
             iN*((self.mG.mean(axis=(0,1)))**2)
@@ -485,9 +489,12 @@ class gnames:
                             columns=self.lSNPs,index=gnames.lGWAScol).T
         dfGWAS.index.name=gnames.sSNPIDs
         dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t')
+    
+    def __do_wf_gwas(self,sName):
         mY=self.mY-self.mY.mean(axis=0)[None,:]
         iC=self.mY.shape[0]
         iF=self.mY.shape[1]
+        iN=int(np.prod(self.mY.shape))
         vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
         vXTX=(((self.mG**2).sum(axis=0))-
             iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
