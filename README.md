@@ -37,7 +37,7 @@ python -c "from gnames import gnames; gnames.Test()"
 This command should yield output along the following lines:
 ```
 TEST OF GNAMES
-With 1000 founders, 10,000 SNPs, and two children per pair
+with 1000 founders, 10,000 SNPs, and two children per pair
 INITIALISING SIMULATOR
 Drawing alleles for SNPs of founders
 Drawing allele frequencies for SNPs of founders
@@ -79,6 +79,7 @@ vDiags1000=np.sort(gsimulator.ComputeDiagsGRM())
 
 plt.plot(np.vstack((vDiags0,vDiags1000)).T)
 plt.savefig('diagsGRM.pdf')
+plt.close()
 
 gsimulator.MakeBed('n1000.m10000.t1000')
 ```
