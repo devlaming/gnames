@@ -78,8 +78,8 @@ class gnames:
         mating of parents and simulating offspring genotypes and phenotypes
     
     ComputeDiagsGRM(dMAF=0.01)
-        Compute diagonals of the GRM for the current generation, excluding
-        SNPs with a minor allele frequency below the given threshold
+        Compute diagonal elements of the GRM for the current generation,
+        excluding SNPs with a minor allele frequency below the given threshold
     
     MakeBed(sName='genotypes')
         Export genotypes to PLINK binary file format
@@ -513,7 +513,7 @@ class gnames:
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
-        Compute diagonals of the GRM for the current generation
+        Compute diagonal elements of the GRM for the current generation
         
         Attributes
         ----------
