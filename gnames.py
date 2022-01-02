@@ -234,7 +234,7 @@ class gnames:
     def __draw_afs(self,dBetaAF0,dMAF0):
         print('Drawing allele frequencies for SNPs of founders')
         vAF=self.rng.beta(dBetaAF0,dBetaAF0,self.iM)
-        while (min(vAF) < dMAF0) | (max(vAF)>(1-dMAF0)):
+        while (min(vAF)<dMAF0)|(max(vAF)>(1-dMAF0)):
             vAF[vAF<dMAF0]=self.rng.beta(dBetaAF0,dBetaAF0,np.sum(vAF<dMAF0))
             vAF[vAF>(1-dMAF0)]=\
                 self.rng.beta(dBetaAF0,dBetaAF0,np.sum(vAF>(1-dMAF0)))
@@ -514,18 +514,18 @@ class gnames:
         if dMAF>=gnames.dTooHighMAF:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
-        mG=np.vstack(self.mG)
-        vEAF=mG.mean(axis=0)/2
+        vEAF=self.mG.mean(axis=(0,1))/2
         iMdrop=0
         vDiagDrop=0
         if dMAF>0:
             vDrop=(((vEAF<dMAF)+(vEAF>=(1-dMAF)))>=1)
             iMdrop=vDrop.sum()
             vEAF[vDrop]=0.5
-            vDiagDrop=(((mG[:,vDrop]-1)/(0.5**0.5))**2)\
-                .sum(axis=1).ravel()
-        vDiagAll=(((mG-2*vEAF[None,:])/\
-                   (((2*vEAF*(1-vEAF))**0.5)[None,:]))**2).sum(axis=1).ravel()
+            vDiagDrop=(((self.mG[:,:,vDrop]-1)/(0.5**0.5))**2)\
+                .sum(axis=2).ravel()
+        vDiagAll=(((self.mG-2*vEAF[None,None,:])/\
+                   (((2*vEAF*(1-vEAF))**0.5)[None,None,:]))**2)\
+            .sum(axis=2).ravel()
         iMkeep=self.iM-iMdrop
         vDiag=(vDiagAll-vDiagDrop)/iMkeep
         return vDiag
