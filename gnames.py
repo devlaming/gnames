@@ -446,6 +446,10 @@ class gnames:
         if self.iT<1:
             raise SyntaxError('Cannot export to PLINK binary format for '+\
                               'generation 0')
+        if not(isinstance(sName,str)):
+            raise ValueError('Prefix for PLINK binary files not a string')
+        if sName=='':
+            raise ValueError('Prefix for PLINK binary files is empty string')
         self.__create_dataframes()
         self.__write_fam(sName)
         self.__write_bim(sName)
@@ -462,6 +466,10 @@ class gnames:
         """
         if self.iT<1:
             raise SyntaxError('Cannot perform GWAS for generation 0')
+        if not(isinstance(sName,str)):
+            raise ValueError('Prefix for GWAS files not a string')
+        if sName=='':
+            raise ValueError('Prefix for GWAS files is empty string')
         mY=self.mY-self.mY.mean()
         iN=np.prod(self.mY.shape)
         vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
