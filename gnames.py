@@ -98,6 +98,8 @@ class gnames:
     binBED2=bytes([0b00011011])
     binBED3=bytes([0b00000001])
     iNperByte=4
+    lAlleles=['A','C','G','T']
+    iPloidy=2
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
                  dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
                      iSeed=502421368):
@@ -186,6 +188,7 @@ class gnames:
         self.dRhoAM=dRhoAM
         self.dVarGN=dVarGN
         self.rng=np.random.RandomState(iSeed)
+        self.__draw_alleles()
         self.__draw_afs(dBetaAF0,dMAF0)
         self.__draw_betas()
         self.__draw_gen0()
@@ -210,8 +213,20 @@ class gnames:
         for i in range(iGenerations):
             self.__draw_next_gen()
     
+    def __draw_alleles(self):
+        print('Drawing alleles for SNPs of founders')
+        self.vChr=np.zeros(self.iM,dtype=np.uint8)
+        self.lSNPs=['SNP_'+str(i+1) for i in range(self.iM)]
+        lA1A2=[self.rng.choice(gnames.lAlleles,size=gnames.iPloidy,\
+                               replace=False) for i in range(self.iM)]
+        mA1A2=np.array(lA1A2)
+        self.vA1=mA1A2[:,0]
+        self.vA2=mA1A2[:,1]
+        self.vCM=np.zeros(self.iM,dtype=np.uint8)
+        self.vPos=np.arange(self.iM)+1
+    
     def __draw_afs(self,dBetaAF0,dMAF0):
-        print('Drawing allele frequencies SNPs founders')
+        print('Drawing allele frequencies for SNPs of founders')
         vAF=self.rng.beta(dBetaAF0,dBetaAF0,self.iM)
         while (min(vAF) < dMAF0) | (max(vAF)>(1-dMAF0)):
             vAF[vAF<dMAF0]=self.rng.beta(dBetaAF0,dBetaAF0,np.sum(vAF<dMAF0))
@@ -347,7 +362,6 @@ class gnames:
     def __assign_ids(self):
         if self.iT<1:
             raise SyntaxError('Cannot assign IDs for generation 0')
-        self.lSNPs=['SNP_'+str(i+1) for i in range(self.iM)]
         iF=self.mGM.shape[0]
         self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
               for i in range(iF)]
@@ -391,10 +405,11 @@ class gnames:
                 oFile.write(sIND)
     
     def __write_bim(self,sName):
-        lSNPs=self.dfG.columns.to_list()
         with open(sName+gnames.sBimExt,'w') as oFile:
             for j in range(self.iM):
-                sSNP='0\t'+lSNPs[j]+'0\t'+str(j+1)+'\tA\tC\n'
+                sSNP=str(self.vChr[j])+'\t'+self.lSNPs[j]+'\t'\
+                    +str(self.vCM[j])+'\t'+str(self.vPos[j])+'\t'\
+                        +self.vA1[j]+'\t'+self.vA2[j]+'\n'
                 oFile.write(sSNP)
     
     def __write_bed(self,sName):
