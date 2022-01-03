@@ -81,6 +81,9 @@ class gnames:
         Compute diagonal elements of the GRM for the current generation,
         excluding SNPs with a minor allele frequency below the given threshold
     
+    MakeGRM(sName='genotypes')
+        Make GRM in GCTA binary format
+    
     MakeBed(sName='genotypes')
         Export genotypes to PLINK binary file format
     
@@ -96,6 +99,9 @@ class gnames:
     sBedExt='.bed'
     sBimExt='.bim'
     sFamExt='.fam'
+    sGrmBinExt='.grm.bin'
+    sGrmBinNExt='.grm.N.bin'
+    sGrmIdExt='.grm.id'
     sGWASExt='.GWAS.classical.txt'
     sWFExt='.GWAS.within_family.txt'
     binBED1=bytes([0b01101100])
@@ -511,16 +517,54 @@ class gnames:
         dfGWAS_WF.index.name=gnames.sSNPIDs
         dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t')
     
-    def ComputeGRM(self,dMAF=0.01):
+    def __compute_grm(self,dMAF):
+        vEAF=self.mG.mean(axis=(0,1))/2
+        vKeep=(vEAF>dMAF)*(vEAF<(1-dMAF))
+        iM=vKeep.sum()
+        vEAF=vEAF[vKeep]
+        mX=(self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
+            (((2*vEAF*(1-vEAF))**0.5)[None,None,:])
+        iN=int(self.mG.shape[0]*self.mG.shape[1])
+        mA=((np.tensordot(mX,mX,axes=(2,2)))/iM).reshape((iN,iN))\
+            .astype(np.float32)
+        return mA,iM
+    
+    def __write_grm(self,sName,mA,iM):
+        iN=int(self.mG.shape[0]*self.mG.shape[1])
+        (vIndR,vIndC)=np.tril_indices(iN)
+        vA=(mA[vIndR,vIndC]).astype(np.float32)
+        vM=(np.ones(vA.shape)*iM).astype(np.float32)
+        vA.tofile(sName+gnames.sGrmBinExt)
+        vM.tofile(sName+gnames.sGrmBinNExt)
+    
+    def __write_ids(self,sName):
+        self.__assign_ids()
+        with open(sName+gnames.sGrmIdExt,'w') as oFile:
+            for i in range(self.iC):
+                sFIDsIIDs=''
+                for j in range(self.iN):
+                    sFIDsIIDs+=self.lFID[j]+"\t"+self.lIC[i][j]+"\n"
+                oFile.write(sFIDsIIDs)
+    
+    def MakeGRM(self,sName='genotypes',dMAF=0.01):
         """
-        Compute the GRM for the current generation
+        Make GRM in GCTA binary format
         
         Attributes
         ----------
+        sName : string, optional
+            prefix for binary GRM files; default='genotypes'
+        
         dMAF : float in (0,0.45), optional
             SNPs with an empirical minor-allele frequency below this threshold
             are excluded from calculation of the GRM
         """
+        if self.iT<1:
+            raise SyntaxError('Cannot create GRM for generation 0')
+        if not(isinstance(sName,str)):
+            raise ValueError('Prefix for binary GRM files not a string')
+        if sName=='':
+            raise ValueError('Prefix for binary GRM files is empty string')
         if not(isinstance(dMAF,(int,float))):
             raise ValueError('Minor-allele-frequency threshold not a number')
         if dMAF<0:
@@ -528,14 +572,9 @@ class gnames:
         if dMAF>=gnames.dTooHighMAF:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
-        vEAF=self.mG.mean(axis=(0,1))/2
-        vKeep=(vEAF>dMAF)*(vEAF<(1-dMAF))
-        iM=vKeep.sum()
-        vEAF=vEAF[vKeep]
-        mX=(self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
-            (((2*vEAF*(1-vEAF))**0.5)[None,None,:])
-        mA=(np.tensordot(mX,mX,axes=(2,2)))/iM
-        return mA
+        (mA,iM)=self.__compute_grm(dMAF)
+        self.__write_grm(sName,mA,iM)
+        self.__write_ids(sName)
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
@@ -588,4 +627,7 @@ class gnames:
         simulator.PerformGWAS()
         print('Writing PLINK binary files (genotypes.bed, .bim, .fam)')
         simulator.MakeBed()
+        print('Making GRM in GCTA binary format '+\
+              '(genotypes.grm.bin, .grm.N.bin, .grm.id)')
+        simulator.MakeGRM()
         print('Runtime: '+str(round(dTime,3))+' seconds')
