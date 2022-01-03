@@ -5,6 +5,7 @@
 *.qassoc
 *.assoc
 *.txt
+*.grm.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
