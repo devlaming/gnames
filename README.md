@@ -92,6 +92,7 @@ plt.close()
 
 gsimulator.PerformGWAS('n1000.m10000.t1000')
 gsimulator.MakeBed('n1000.m10000.t1000')
+gsimulator.MakeGRM('n1000.m10000.t1000')
 ```
 
 :warning: This code may take about ten minutes to run, as the code simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
@@ -100,7 +101,7 @@ The plot that is created near the end of the code shows the diagonal elements of
 
 In addition, this bit of code shows how `gnames` can be used to calculate GWAS summary statistics based on the last generation, here yielding files named `n1000.m10000.t1000.GWAS.classical.txt` and `n1000.m10000.t1000.GWAS.within_family.txt`.
 
-Finally, the code also shows how `gnames` can be used to to create PLINK binary files for the last generation. These files are here named `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam`.
+Finally, the code also shows how `gnames` can be used to create PLINK binary files and binary GRM files for the last generation. These files are here named (*i*) `n1000.m10000.t1000.bed`, `n1000.m10000.t1000.bim`, and `n1000.m10000.t1000.fam` and (*ii*) `n1000.m10000.t1000.grm.id`, `n1000.m10000.t1000.grm.bin`, and `n1000.m10000.t1000.grm.N.bin`.
 
 ## Updating `gnames`
 
