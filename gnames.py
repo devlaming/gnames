@@ -529,7 +529,7 @@ class gnames:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         vEAF=self.mG.mean(axis=(0,1))/2
-        vKeep=(((vEAF<=dMAF)+(vEAF>=(1-dMAF)))==0)
+        vKeep=(vEAF>dMAF)*(vEAF<(1-dMAF))
         iM=vKeep.sum()
         vEAF=vEAF[vKeep]
         mX=(self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
@@ -555,7 +555,7 @@ class gnames:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         vEAF=self.mG.mean(axis=(0,1))/2
-        vKeep=(((vEAF<=dMAF)+(vEAF>=(1-dMAF)))==0)
+        vKeep=(vEAF>dMAF)*(vEAF<(1-dMAF))
         vEAF=vEAF[vKeep]
         vDiag=(((self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
                    (((2*vEAF*(1-vEAF))**0.5)[None,None,:]))**2)\
