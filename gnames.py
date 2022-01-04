@@ -266,7 +266,7 @@ class gnames:
         self.__draw_y()
     
     def __draw_g0(self):
-        print('Drawing genotypes founders (=generation 0)')
+        print('Drawing genotypes founders')
         self.iT=0
         if self.iSN==0:
             iSN=self.iN
@@ -370,7 +370,7 @@ class gnames:
     
     def __assign_ids(self):
         if self.iT<1:
-            raise SyntaxError('Cannot assign IDs for generation 0')
+            raise SyntaxError('Cannot assign IDs for founders')
         iF=self.mGM.shape[0]
         self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
               for i in range(iF)]
@@ -382,7 +382,7 @@ class gnames:
     
     def __create_dataframes(self):
         if self.iT<1:
-            raise SyntaxError('Cannot create DataFrames for generation 0')
+            raise SyntaxError('Cannot create DataFrames for founders')
         self.__assign_ids()
         miM=pd.MultiIndex.from_arrays([self.lFID,self.lIM],names=gnames.tIDs)
         miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
@@ -451,7 +451,7 @@ class gnames:
         """
         if self.iT<1:
             raise SyntaxError('Cannot export to PLINK binary format for '+\
-                              'generation 0')
+                              'founders')
         if not(isinstance(sName,str)):
             raise ValueError('Prefix for PLINK binary files not a string')
         if sName=='':
@@ -471,7 +471,7 @@ class gnames:
             prefix for GWAS files; default='results'
         """
         if self.iT<1:
-            raise SyntaxError('Cannot perform GWAS for generation 0')
+            raise SyntaxError('Cannot perform GWAS for founders')
         if not(isinstance(sName,str)):
             raise ValueError('Prefix for GWAS files not a string')
         if sName=='':
@@ -560,7 +560,7 @@ class gnames:
             are excluded from calculation of the GRM
         """
         if self.iT<1:
-            raise SyntaxError('Cannot create GRM for generation 0')
+            raise SyntaxError('Cannot create GRM for founders')
         if not(isinstance(sName,str)):
             raise ValueError('Prefix for binary GRM files not a string')
         if sName=='':
