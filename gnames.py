@@ -85,7 +85,7 @@ class gnames:
         Make GRM in GCTA binary format
     
     MakeBed(sName='genotypes')
-        Export genotypes to PLINK binary file format
+        Export genotypes and phenotypes to PLINK files
     
     PerformGWAS(sName='results')
         Perform classical GWAS and within-family GWAS based on offspring data
@@ -99,6 +99,8 @@ class gnames:
     sBedExt='.bed'
     sBimExt='.bim'
     sFamExt='.fam'
+    sPheExt='.phe'
+    sMissY='-9'
     sGrmBinExt='.grm.bin'
     sGrmBinNExt='.grm.N.bin'
     sGrmIdExt='.grm.id'
@@ -398,7 +400,7 @@ class gnames:
         self.dfG=dfG
         self.dfY=dfY
     
-    def __write_fam(self,sName):
+    def __write_fam_phe(self,sName):
         with open(sName+gnames.sFamExt,'w') as oFile:
             for j in range(len(self.dfG)):
                 sFID=self.dfG.index[j][0]
@@ -409,8 +411,18 @@ class gnames:
                 else:
                     sMID='0'
                     sPID='0'
+                sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t'\
+                    +gnames.sMissY+'\n'
+                oFile.write(sIND)
+        with open(sName+gnames.sPheExt,'w') as oFile:
+            sHeader=gnames.tIDs[0]+'\t'+gnames.tIDs[1]+'\t'\
+                +gnames.lPheno[0]+'\n'
+            oFile.write(sHeader)
+            for j in range(len(self.dfG)):
+                sFID=self.dfG.index[j][0]
+                sIID=self.dfG.index[j][1]
                 dY=self.dfY.loc[self.dfG.index[j]].values[0]
-                sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t'+str(dY)+'\n'
+                sIND=sFID+'\t'+sIID+'\t'+str(dY)+'\n'
                 oFile.write(sIND)
     
     def __write_bim(self,sName):
@@ -442,7 +454,7 @@ class gnames:
     
     def MakeBed(self,sName='genotypes'):
         """
-        Export genotypes to PLINK binary file format
+        Export genotypes and phenotypes to PLINK files
         
         Attributes
         ----------
@@ -457,7 +469,7 @@ class gnames:
         if sName=='':
             raise ValueError('Prefix for PLINK binary files is empty string')
         self.__create_dataframes()
-        self.__write_fam(sName)
+        self.__write_fam_phe(sName)
         self.__write_bim(sName)
         self.__write_bed(sName)
     
@@ -625,9 +637,9 @@ class gnames:
         print('Calculating and storing classical GWAS and within-family GWAS')
         print('results based on offspring data last generation')
         simulator.PerformGWAS()
-        print('Writing PLINK binary files (genotypes.bed, .bim, .fam)')
+        print('Writing PLINK files (genotypes.bed,.bim,.fam,.phe)')
         simulator.MakeBed()
         print('Making GRM in GCTA binary format '+\
-              '(genotypes.grm.bin, .grm.N.bin, .grm.id)')
+              '(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
         print('Runtime: '+str(round(dTime,3))+' seconds')
