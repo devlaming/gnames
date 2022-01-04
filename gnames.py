@@ -276,14 +276,14 @@ class gnames:
         iR=(self.iN)%(iSN)
         iBT=iB+(iR>0)
         self.mG=np.empty((1,self.iN,self.iM),dtype=np.int8)
-        tCount=tqdm(total=iBT)
+        if iBT>1: tCount=tqdm(total=iBT)
         for i in range(iB):
             self.__draw_g0_rows(iSN*i,iSN)
-            tCount.update(1)
+            if iBT>1: tCount.update(1)
         if iR>0:
             self.__draw_g0_rows(iSN*iB,iR)
-            tCount.update(1)
-        tCount.close()
+            if iBT>1: tCount.update(1)
+        if iBT>1: tCount.close()
     
     def __draw_g0_rows(self,iNstart,iNadd):
         if self.iSM==0:

@@ -43,17 +43,16 @@ Drawing alleles for SNPs of founders
 Drawing allele frequencies for SNPs of founders
 Drawing true SNP effects
 Drawing genotypes founders
-100%|█████████████████████████████████| 1/1 [00:00<00:00,  5.58it/s]
 Highest diagonal element of GRM for founders = 1.056
 SIMULATING 10 GENERATIONS
-100%|███████████████████████████████| 10/10 [00:03<00:00,  2.53it/s]
+100%|███████████████████████████████| 10/10 [00:03<00:00,  2.51it/s]
 Highest diagonal element of GRM after 10 generations = 1.086
 GENERATING OUTPUT
 Calculating and storing classical GWAS and within-family GWAS
 results based on offspring data last generation
 Writing PLINK binary files (genotypes.bed, .bim, .fam)
 Making GRM in GCTA binary format (genotypes.grm.bin, .grm.N.bin, .grm.id)
-Runtime: 4.567 seconds
+Runtime: 4.59 seconds
 ```
 
 This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.056 to 1.086 over the ten generations.
