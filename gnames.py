@@ -47,6 +47,9 @@ class gnames:
         assortattive-mating strenght = correlation in AM between mates;
         default=0.8
     
+    dRhoSibE : float in [0,+1], optional
+        environment correlation of Y across siblings; default=0
+    
     dVarGN : float >= 0, optional
         variance in Y accounted for by genetic-nurture effects, where Y
         without genetic-nurture effects has variance one; default=1
@@ -114,9 +117,9 @@ class gnames:
     iPloidy=2
     lGWAScol=['Baseline Allele','Effect Allele','Per-allele effect estimate',\
                'Standard error','T-test statistic','P-value']
-    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dHsqAM=0.5,dRhoG=1,dRhoE=1,\
-                 dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,dMAF0=0.1,\
-                     iSeed=502421368):
+    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dRhoSibE=0,dHsqAM=0.5,dRhoG=1,\
+                 dRhoE=1,dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,\
+                     dMAF0=0.1,iSeed=502421368):
         if not(isinstance(iN,int)):
             raise ValueError('Sample size not integer')
         if not(isinstance(iM,int)):
@@ -136,6 +139,9 @@ class gnames:
             raise ValueError('Minor-allele-frequency threshold not a number')
         if not(isinstance(dHsqY,(int,float))):
             raise ValueError('Heritability of main trait Y is not a number')
+        if not(isinstance(dRhoSibE,(int,float))):
+            raise ValueError('Environment correlation of Y across siblings'+\
+                             ' not a number')
         if not(isinstance(dHsqAM,(int,float))):
             raise ValueError('Heritability of assortative-mating trait is'+\
                              ' not a number')
@@ -174,6 +180,9 @@ class gnames:
         if dHsqY>1 or dHsqY<0:
             raise ValueError('Heritability of main trait Y is'+\
                              ' not constrained to [0,1] interval')
+        if dRhoSibE>1 or dRhoSibE<0:
+            raise ValueError('Environment correlation of Y across siblings'+\
+                             ' is not constrained to [0,1] interval')
         if dHsqAM>1 or dHsqAM<0:
             raise ValueError('Heritability of assortative-mating trait is'+\
                              ' not constrained to [0,1] interval')
@@ -196,6 +205,7 @@ class gnames:
         self.iSN=iSN
         self.iSM=iSM
         self.dHsqY=dHsqY
+        self.dRhoSibE=dRhoSibE
         self.dHsqAM=dHsqAM
         self.dRhoG=dRhoG
         self.dRhoE=dRhoE
@@ -206,6 +216,7 @@ class gnames:
         self.__draw_afs(dBetaAF0,dMAF0)
         self.__draw_betas()
         self.__draw_gen0()
+        self.__set_loadings_rho_sib_e()
     
     def Simulate(self,iGenerations=1):
         """
@@ -226,6 +237,13 @@ class gnames:
             raise ValueError('Number of generations non-positive')
         for i in tqdm(range(iGenerations)):
             self.__draw_next_gen()
+    
+    def __set_loadings_rho_sib_e(self):
+        mRhoSibE=(1-self.dRhoSibE)*np.eye(self.iC)\
+            +self.dRhoSibE*np.ones((self.iC,self.iC))
+        (vD,mP)=np.linalg.eigh(mRhoSibE)
+        vD[vD<=0]=0
+        self.mWeightSibE=(mP*((vD**0.5)[None,:]))
     
     def __draw_alleles(self):
         print('Drawing alleles for SNPs of founders')
@@ -323,6 +341,9 @@ class gnames:
             self.mG[i,:,:]=mGC
     
     def __draw_y(self):
+        iC=1
+        if self.iT>0:
+            iC=self.iC
         self.mYGN=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
         vYGNold=np.zeros(self.iN)
         if self.iT>0:
@@ -330,9 +351,11 @@ class gnames:
                                         /self.vYGNold.std())
         mGY=(self.mG*self.vBetaY[None,None,:]).mean(axis=2)
         mGAM=(self.mG*self.vBetaAM[None,None,:]).mean(axis=2)
-        mEY=self.rng.normal(size=(self.iC,self.iN))
+        mEY=self.rng.normal(size=(iC,self.iN))
+        if self.iT>0:
+            mEY=self.mWeightSibE@mEY
         mEAM=self.dRhoE*mEY+\
-            ((1-self.dRhoE**2)**0.5)*self.rng.normal(size=(self.iC,self.iN))
+            ((1-self.dRhoE**2)**0.5)*self.rng.normal(size=(iC,self.iN))
         mGY=(mGY-mGY.mean())/mGY.std()
         mGAM=(mGAM-mGAM.mean())/mGAM.std()
         mEY=(mEY-mEY.mean())/mEY.std()
