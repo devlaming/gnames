@@ -46,7 +46,7 @@ Drawing genotypes founders
 Highest diagonal element of GRM for founders = 1.056
 SIMULATING 10 GENERATIONS
 100%|████████████████████████████████████| 10/10 [00:04<00:00,  2.46it/s]
-Highest diagonal element of GRM after 10 generations = 1.086
+Highest diagonal element of GRM after 10 generations = 1.09
 GENERATING OUTPUT
 Calculating and storing classical GWAS and within-family GWAS
 results based on offspring data last generation
@@ -55,7 +55,7 @@ Making GRM in GCTA binary format (genotypes.grm.bin,.grm.N.bin,.grm.id)
 Runtime: 4.7 seconds
 ```
 
-This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.056 to 1.086 over the ten generations.
+This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.056 to 1.09 over the ten generations.
 
 In addition, `gnames` performed a classical GWAS and a within-family GWAS based on the offspring data for the last generation. Results are exported to human-readable files: `results.GWAS.classical.txt` and `results.GWAS.within_family.txt`.
 
