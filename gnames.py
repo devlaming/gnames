@@ -537,7 +537,7 @@ class gnames:
         iF=self.mY.shape[1]
         iN=int(np.prod(self.mY.shape))
         vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
-        vXTX=(((self.mG**2).sum(axis=0))-
+        vXTX=(((self.mG**2).sum(axis=0))-\
             iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
