@@ -656,6 +656,12 @@ class gnames:
             .mean(axis=2).ravel()
         return vDiag
     
+    def MakePGI(self,iCGWAS,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
+        vB=self.__do_standard_gwas(iN0=iN0GWAS,iN1=iN1GWAS,iC=iCGWAS,\
+                                   bExport=False)
+        mPGI=(self.mG[:,iN0PGI:iN1PGI]*vB[None,None,:]).sum(axis=2)
+        return mPGI
+    
     def Test():
         """
         Function to test if gnames works properly
