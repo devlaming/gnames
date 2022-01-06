@@ -514,15 +514,15 @@ class gnames:
         self.__do_standard_gwas(sName)
         self.__do_wf_gwas(sName)
     
-    def __do_standard_gwas(self,sName):
-        mY=self.mY-self.mY.mean()
-        iN=int(np.prod(self.mY.shape))
-        vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
-        vXTX=(self.mG**2).sum(axis=(0,1))-\
-            iN*((self.mG.mean(axis=(0,1)))**2)
+    def __do_standard_gwas(self,sName,iC=1):
+        mY=self.mY[0:iC]-self.mY[0:iC].mean()
+        iN=int(np.prod(mY.shape))
+        vXTY=(self.mG[0:iC]*mY[:,:,None]).sum(axis=(0,1))
+        vXTX=(self.mG[0:iC]**2).sum(axis=(0,1))-\
+            iN*((self.mG[0:iC].mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
-        mYhat=self.mG*vB[None,None,:]
+        mYhat=self.mG[0:iC]*vB[None,None,:]
         vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
             (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
         vSE=((vSSR/(iN-1))/vXTX)**0.5
@@ -535,9 +535,9 @@ class gnames:
     
     def __do_wf_gwas(self,sName):
         mY=self.mY-self.mY.mean(axis=0)[None,:]
-        iC=self.mY.shape[0]
-        iF=self.mY.shape[1]
-        iN=int(np.prod(self.mY.shape))
+        iC=mY.shape[0]
+        iF=mY.shape[1]
+        iN=int(np.prod(mY.shape))
         vXTY=(self.mG*mY[:,:,None]).sum(axis=(0,1))
         vXTX=(((self.mG**2).sum(axis=0))-\
             iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
