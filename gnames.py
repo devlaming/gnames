@@ -462,7 +462,7 @@ class gnames:
         iR=iN%gnames.iNperByte
         iBT=iB+(iR>0)
         mG=np.empty((iBT*gnames.iNperByte,self.iM),dtype=np.uint8)
-        mG[0:((iB*gnames.iNperByte)+iR)]=2*(2-self.dfG.values)
+        mG[0:((iB*gnames.iNperByte)+iR)]=2*self.dfG.values
         mG[mG==4]=3
         mG[((iB*gnames.iNperByte)+iR):iBT*gnames.iNperByte]=0
         vBase=np.array([2**0,2**2,2**4,2**6]*iBT,dtype=np.uint8)
