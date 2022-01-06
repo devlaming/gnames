@@ -531,7 +531,7 @@ class gnames:
         dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
                             columns=self.lSNPs,index=gnames.lGWAScol).T
         dfGWAS.index.name=gnames.sSNPIDs
-        dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t')
+        dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t',na_rep='NA')
     
     def __do_wf_gwas(self,sName):
         mY=self.mY-self.mY.mean(axis=0)[None,:]
@@ -553,7 +553,7 @@ class gnames:
         dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
                             columns=self.lSNPs,index=gnames.lGWAScol).T
         dfGWAS_WF.index.name=gnames.sSNPIDs
-        dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t')
+        dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t',na_rep='NA')
     
     def __compute_grm(self,dMAF):
         vEAF=self.mG.mean(axis=(0,1))/2
