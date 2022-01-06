@@ -514,7 +514,7 @@ class gnames:
         self.__do_standard_gwas(sName)
         self.__do_wf_gwas(sName)
     
-    def __do_standard_gwas(self,sName,iC=1):
+    def __do_standard_gwas(self,sName=None,iC=1,bExport=True):
         mY=self.mY[0:iC]-self.mY[0:iC].mean()
         iN=int(np.prod(mY.shape))
         vXTY=(self.mG[0:iC]*mY[:,:,None]).sum(axis=(0,1))
@@ -522,18 +522,23 @@ class gnames:
             iN*((self.mG[0:iC].mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
-        mYhat=self.mG[0:iC]*vB[None,None,:]
-        vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
-            (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
-        vSE=((vSSR/(iN-1))/vXTX)**0.5
-        vT=vB/vSE
-        vP=2*t.cdf(-abs(vT),iN-1)
-        dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
-                            columns=self.lSNPs,index=gnames.lGWAScol).T
-        dfGWAS.index.name=gnames.sSNPIDs
-        dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t',na_rep='NA')
+        if bExport:
+            if sName is None:
+                raise ValueError('Prefix for GWAS files is not defined')
+            mYhat=self.mG[0:iC]*vB[None,None,:]
+            vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
+                (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
+            vSE=((vSSR/(iN-1))/vXTX)**0.5
+            vT=vB/vSE
+            vP=2*t.cdf(-abs(vT),iN-1)
+            dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+                                columns=self.lSNPs,index=gnames.lGWAScol).T
+            dfGWAS.index.name=gnames.sSNPIDs
+            dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t',na_rep='NA')
+        else:
+            return vB
     
-    def __do_wf_gwas(self,sName):
+    def __do_wf_gwas(self,sName=None,bExport=True):
         mY=self.mY-self.mY.mean(axis=0)[None,:]
         iC=mY.shape[0]
         iF=mY.shape[1]
@@ -543,17 +548,22 @@ class gnames:
             iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
-        mYhat=(self.mG*vB[None,None,:])
-        vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
-            (mYhat**2).sum(axis=(0,1))-\
-                iC*(((mYhat.mean(axis=0))**2).sum(axis=0))
-        vSE=((vSSR/(iN-iF))/vXTX)**0.5
-        vT=vB/vSE
-        vP=2*t.cdf(-abs(vT),iN-1)
-        dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
-                            columns=self.lSNPs,index=gnames.lGWAScol).T
-        dfGWAS_WF.index.name=gnames.sSNPIDs
-        dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t',na_rep='NA')
+        if bExport:
+            if sName is None:
+                raise ValueError('Prefix for GWAS files is not defined')
+            mYhat=(self.mG*vB[None,None,:])
+            vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
+                (mYhat**2).sum(axis=(0,1))-\
+                    iC*(((mYhat.mean(axis=0))**2).sum(axis=0))
+            vSE=((vSSR/(iN-iF))/vXTX)**0.5
+            vT=vB/vSE
+            vP=2*t.cdf(-abs(vT),iN-1)
+            dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+                                columns=self.lSNPs,index=gnames.lGWAScol).T
+            dfGWAS_WF.index.name=gnames.sSNPIDs
+            dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t',na_rep='NA')
+        else:
+            return vB
     
     def __compute_grm(self,dMAF):
         vEAF=self.mG.mean(axis=(0,1))/2
