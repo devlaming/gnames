@@ -514,18 +514,25 @@ class gnames:
         self.__do_standard_gwas(sName)
         self.__do_wf_gwas(sName)
     
-    def __do_standard_gwas(self,sName=None,iC=1,bExport=True):
-        mY=self.mY[0:iC]-self.mY[0:iC].mean()
+    def __do_standard_gwas(self,sName=None,iC=None,iN0=None,iN1=None,\
+                           bExport=True):
+        if iC is None:
+            iC=self.mY.shape[0]
+        if iN0 is None:
+            iN0=0
+        if iN1 is None:
+            iN1=self.mY.shape[1]
+        mY=self.mY[0:iC,iN0:iN1]-self.mY[0:iC,iN0:iN1].mean()
         iN=int(np.prod(mY.shape))
-        vXTY=(self.mG[0:iC]*mY[:,:,None]).sum(axis=(0,1))
-        vXTX=(self.mG[0:iC]**2).sum(axis=(0,1))-\
-            iN*((self.mG[0:iC].mean(axis=(0,1)))**2)
+        vXTY=(self.mG[0:iC,iN0:iN1]*mY[:,:,None]).sum(axis=(0,1))
+        vXTX=(self.mG[0:iC,iN0:iN1]**2).sum(axis=(0,1))-\
+            iN*((self.mG[0:iC,iN0:iN1].mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
         if bExport:
             if sName is None:
                 raise ValueError('Prefix for GWAS files is not defined')
-            mYhat=self.mG[0:iC]*vB[None,None,:]
+            mYhat=self.mG[0:iC,iN0:iN1]*vB[None,None,:]
             vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
                 (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
             vSE=((vSSR/(iN-1))/vXTX)**0.5
