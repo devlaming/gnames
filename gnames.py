@@ -522,8 +522,9 @@ class gnames:
             iN*((self.mG.mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
-        mR=mY[:,:,None]-(self.mG*vB[None,None,:])
-        vSSR=((mR**2).sum(axis=(0,1)))-iN*((mR.mean(axis=(0,1)))**2)
+        mYhat=self.mG*vB[None,None,:]
+        vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
+            (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
         vSE=((vSSR/(iN-1))/vXTX)**0.5
         vT=vB/vSE
         vP=2*t.cdf(-abs(vT),iN-1)
@@ -543,9 +544,10 @@ class gnames:
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
         mYhat=(self.mG*vB[None,None,:])
-        mYhat=mYhat-((mYhat.mean(axis=0))[None,:,:])
-        mR=mY[:,:,None]-mYhat
-        vSE=((((mR**2).sum(axis=(0,1)))/(iN-iF))/vXTX)**0.5
+        vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
+            (mYhat**2).sum(axis=(0,1))-\
+                iC*(((mYhat.mean(axis=0))**2).sum(axis=0))
+        vSE=((vSSR/(iN-iF))/vXTX)**0.5
         vT=vB/vSE
         vP=2*t.cdf(-abs(vT),iN-1)
         dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
@@ -667,3 +669,5 @@ class gnames:
               '(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
         print('Runtime: '+str(round(dTime,3))+' seconds')
+
+gnames.Test()
