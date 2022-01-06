@@ -523,7 +523,8 @@ class gnames:
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
         mR=mY[:,:,None]-(self.mG*vB[None,None,:])
-        vSE=((((mR**2).sum(axis=(0,1)))/(iN-1))/vXTX)**0.5
+        vSSR=((mR**2).sum(axis=(0,1)))-iN*((mR.mean(axis=(0,1)))**2)
+        vSE=((vSSR/(iN-1))/vXTX)**0.5
         vT=vB/vSE
         vP=2*t.cdf(-abs(vT),iN-1)
         dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
