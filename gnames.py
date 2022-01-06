@@ -669,5 +669,3 @@ class gnames:
               '(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
         print('Runtime: '+str(round(dTime,3))+' seconds')
-
-gnames.Test()
