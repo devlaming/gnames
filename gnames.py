@@ -84,7 +84,7 @@ class gnames:
         Compute diagonal elements of the GRM for the current generation,
         excluding SNPs with a minor allele frequency below the given threshold
     
-    MakeGRM(sName='genotypes')
+    MakeGRM(sName='genotypes',dMAF=0.01)
         Make GRM in GCTA binary format
     
     MakeBed(sName='genotypes')
@@ -92,10 +92,14 @@ class gnames:
     
     PerformGWAS(sName='results')
         Perform classical GWAS and within-family GWAS based on offspring data
+    
+    MakeTwoPGIs(sName='results',iNGWAS=None,iNPGI=None)
+        Construct 2 PGIs in hold-out sample based on classical GWAS estimates
+        from two non-overlapping discovery samples
     '''
     dTooHighMAF=0.45
     tIDs=('FID','IID')
-    sSNPIDs='SNP ID'
+    sSNPIDs='SNP'
     lPheno=['Y']
     sMat='Mother'
     sPat='Father'
@@ -109,6 +113,7 @@ class gnames:
     sGrmIdExt='.grm.id'
     sGWASExt='.GWAS.classical.txt'
     sWFExt='.GWAS.within_family.txt'
+    sPGIExt='.pgs'
     binBED1=bytes([0b01101100])
     binBED2=bytes([0b00011011])
     binBED3=bytes([0b00000001])
@@ -117,6 +122,8 @@ class gnames:
     iPloidy=2
     lGWAScol=['Baseline Allele','Effect Allele','Per-allele effect estimate',\
                'Standard error','T-test statistic','P-value']
+    dPropGWAS=0.4
+    dPropPGI=0.2
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dRhoSibE=0,dHsqAM=0.5,dRhoG=1,\
                  dRhoE=1,dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,\
                      dMAF0=0.1,iSeed=502421368):
@@ -405,25 +412,28 @@ class gnames:
         for i in range(self.iC):
             self.lIC[i]=['Child'+str(i+1)]*iF
     
-    def __create_dataframes(self):
+    def __create_dataframes(self,bPhenoOnly=False):
         if self.iT<1:
             raise SyntaxError('Cannot create DataFrames for founders')
         self.__assign_ids()
         miM=pd.MultiIndex.from_arrays([self.lFID,self.lIM],names=gnames.tIDs)
         miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
-        dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
-        dfY=pd.DataFrame(self.vYM,miM,gnames.lPheno)
-        dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
+        dfY=pd.DataFrame(self.vYM,miM,gnames.lPheno)        
         dfY=dfY.append(pd.DataFrame(self.vYF,miF,gnames.lPheno))
+        if not(bPhenoOnly):
+            dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
+            dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
         for i in range(self.iC):
             miC=pd.MultiIndex.from_arrays([self.lFID,self.lIC[i]],\
                                           names=gnames.tIDs)
-            dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
             dfY=dfY.append(pd.DataFrame(self.mY[i],miC,gnames.lPheno))
-        self.dfG=dfG
-        self.dfY=dfY
+            if not(bPhenoOnly):
+                dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
+        self.dfY=dfY    
+        if not(bPhenoOnly):
+            self.dfG=dfG
     
-    def __write_fam_phe(self,sName):
+    def __write_fam(self,sName):
         with open(sName+gnames.sFamExt,'w') as oFile:
             for j in range(len(self.dfG)):
                 sFID=self.dfG.index[j][0]
@@ -437,14 +447,16 @@ class gnames:
                 sIND=sFID+'\t'+sIID+'\t'+sPID+'\t'+sMID+'\t0\t'\
                     +gnames.sMissY+'\n'
                 oFile.write(sIND)
+    
+    def __write_phe(self,sName):
         with open(sName+gnames.sPheExt,'w') as oFile:
             sHeader=gnames.tIDs[0]+'\t'+gnames.tIDs[1]+'\t'\
                 +gnames.lPheno[0]+'\n'
             oFile.write(sHeader)
-            for j in range(len(self.dfG)):
-                sFID=self.dfG.index[j][0]
-                sIID=self.dfG.index[j][1]
-                dY=self.dfY.loc[self.dfG.index[j]].values[0]
+            for j in range(len(self.dfY)):
+                sFID=self.dfY.index[j][0]
+                sIID=self.dfY.index[j][1]
+                dY=self.dfY.values[j][0]
                 sIND=sFID+'\t'+sIID+'\t'+str(dY)+'\n'
                 oFile.write(sIND)
     
@@ -492,7 +504,8 @@ class gnames:
         if sName=='':
             raise ValueError('Prefix for PLINK binary files is empty string')
         self.__create_dataframes()
-        self.__write_fam_phe(sName)
+        self.__write_phe(sName)
+        self.__write_fam(sName)
         self.__write_bim(sName)
         self.__write_bed(sName)
     
@@ -656,11 +669,69 @@ class gnames:
             .mean(axis=2).ravel()
         return vDiag
     
-    def MakePGI(self,iCGWAS,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
-        vB=self.__do_standard_gwas(iN0=iN0GWAS,iN1=iN1GWAS,iC=iCGWAS,\
-                                   bExport=False)
+    def __pgi_to_dataframe(self,iGWASNo,mPGI,iN0,iN1):
+        lFID=self.lFID[iN0:iN1]
+        dfPGI=pd.DataFrame()
+        for i in range(self.iC):
+            lIC=self.lIC[i][iN0:iN1]
+            miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
+            dfPGI=dfPGI.append(pd.DataFrame(mPGI[i],miC,\
+                                            ['PGI from GWAS'+str(iGWASNo)]))
+        return dfPGI
+    
+    def __calculate_pgi(self,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
+        vB=self.__do_standard_gwas(iC=1,iN0=iN0GWAS,iN1=iN1GWAS,bExport=False)
         mPGI=(self.mG[:,iN0PGI:iN1PGI]*vB[None,None,:]).sum(axis=2)
         return mPGI
+    
+    def __write_pgs(self,sName,iNGWAS,iNPGI):
+        mPGI1=self.__calculate_pgi(0,iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
+        mPGI2=self.__calculate_pgi(iNGWAS,2*iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI1=self.__pgi_to_dataframe(1,mPGI1,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI2=self.__pgi_to_dataframe(2,mPGI2,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI=dfPGI1.join(dfPGI2)
+        dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
+    
+    def MakeTwoPGIs(self,sName='results',iNGWAS=None,iNPGI=None):
+        """
+        Construct 2 PGIs in hold-out sample based on classical GWAS estimates,
+        where PGI 1 is based on 1st GWAS discovery sample and PGI 2 is based
+        on 2nd GWAS discovery sample, where all samples are non-overlapping,
+        and where GWASs consider only one child per family
+        
+        Attributes
+        ----------
+        sName : string, optional
+            prefix for binary GRM files; default='results'
+        
+        iNGWAS : int, optional
+            sample size of the two non-overlapping discovery GWASs;
+            default=None, which corresponds to using 40% of the families
+            for each GWAS
+        
+        iNPGI : int, optional
+            sample size for calculating PGIs;
+            default=None, which corresponds to using 20% of the families
+        """
+        if self.iT<1:
+            raise SyntaxError('Cannot create PGIs for founders')
+        if iNGWAS is None:
+            iNGWAS=int(gnames.dPropGWAS*self.iN)
+        if iNPGI is None:
+            iNPGI=int(gnames.dPropPGI*self.iN)
+        if not(isinstance(iNGWAS,int)):
+            raise ValueError('GWAS sample size non-integer')
+        if not(isinstance(iNPGI,int)):
+            raise ValueError('PGI sample size non-integer')
+        if iNGWAS<1:
+            raise ValueError('GWAS sample size non-positive')
+        if iNPGI<1:
+            raise ValueError('PGI sample size non-positive')
+        if (2*iNGWAS+iNPGI)>self.iN:
+            raise ValueError('N too low for desired N(GWAS) and N(PGI)')
+        self.__create_dataframes(bPhenoOnly=True)
+        self.__write_phe(sName)
+        self.__write_pgs(sName,iNGWAS,iNPGI)
     
     def Test():
         """
@@ -691,4 +762,8 @@ class gnames:
         print('Making GRM in GCTA binary format '+\
               '(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
+        print('Constructing out-of-sample PGIs based on classical GWAS '+\
+              'estimates from two non-overlapping samples, drawing 1 child '+\
+              'per family for the GWASs')
+        simulator.MakeTwoPGIs()
         print('Runtime: '+str(round(dTime,3))+' seconds')
