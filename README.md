@@ -45,14 +45,18 @@ Drawing true SNP effects
 Drawing genotypes founders
 Highest diagonal element of GRM for founders = 1.056
 SIMULATING 10 GENERATIONS
-100%|████████████████████████████████████| 10/10 [00:04<00:00,  2.46it/s]
+100%|█████████████████████████| 10/10 [00:03<00:00,  2.53it/s]
 Highest diagonal element of GRM after 10 generations = 1.09
 GENERATING OUTPUT
 Calculating and storing classical GWAS and within-family GWAS
 results based on offspring data last generation
 Writing PLINK files (genotypes.bed,.bim,.fam,.phe)
-Making GRM in GCTA binary format (genotypes.grm.bin,.grm.N.bin,.grm.id)
-Runtime: 4.7 seconds
+Making GRM in GCTA binary format
+(genotypes.grm.bin,.grm.N.bin,.grm.id)
+Making 2 PGIs in hold-out sample based on 2 sets of
+GWAS estimates for Y (GWASs use non-overlapping samples
+and data on only child per family)
+Runtime: 4.567 seconds
 ```
 
 This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.056 to 1.09 over the ten generations.
@@ -61,9 +65,11 @@ In addition, `gnames` performed a classical GWAS and a within-family GWAS based 
 
 Moreover, `gnames` created a set of PLINK binary files: `genotypes.bed`, `genotypes.bim`, `genotypes.fam`. These PLINK binary files can readily be used for follow-up analyses using tools such as [PLINK](https://www.cog-genomics.org/plink/). `gnames` also created a phenotype file, `genotypes.phe`, that can be used by PLINK e.g. to perform a GWAS.
 
-Finally, `gnames` created a set of GRM files in GCTA binary format: `genotypes.grm.id`, `genotypes.grm.bin`, and `genotypes.grm.N.bin`. These files combined with `genotypes.phe` can easily be used for follow-up analyses using tools such as [MGREML](https://www.github.com/devlaming/mgreml) and [GCTA](https://yanglab.westlake.edu.cn/software/gcta/).
+Also, `gnames` created a set of GRM files in GCTA binary format: `genotypes.grm.id`, `genotypes.grm.bin`, and `genotypes.grm.N.bin`. These files combined with `genotypes.phe` can easily be used for follow-up analyses using tools such as [MGREML](https://www.github.com/devlaming/mgreml) and [GCTA](https://yanglab.westlake.edu.cn/software/gcta/).
 
-The whole simulation, two GWASs, and export to PLINK binary files and to GCTA binary GRM files took less than five seconds.
+Finally, `gnames` performed two classical GWASs (*i*) using data on only child per family for (*ii*) two non-overlapping sets of families, where (*iii*) 40% of the families are considered in each GWAS, and used the resulting two sets of GWAS estimates for polygenic prediction out-of-sample for all children for the remaining 20% of the families. Resulting polygenic scores (PGSs) or polygenic indices (PGIs) can be found in `results.pgs` and the true phenotypes in `results.phe`.
+
+The whole simulation, four GWASs, polygenic prediction, and export to PLINK binary files and to GCTA binary GRM files took less than five seconds.
 
 ## Tutorial
 
