@@ -94,8 +94,8 @@ class gnames:
         Perform classical GWAS and within-family GWAS based on offspring data
     
     MakeTwoPGIs(sName='results',iNGWAS=None,iNPGI=None)
-        Construct 2 PGIs in hold-out sample based on classical GWAS estimates
-        from two non-overlapping discovery samples
+        Make 2 PGIs in hold-out sample based on 2 sets of GWAS estimates for Y
+        (GWASs use non-overlapping samples and data on only child per family)
     '''
     dTooHighMAF=0.45
     tIDs=('FID','IID')
@@ -694,11 +694,9 @@ class gnames:
     
     def MakeTwoPGIs(self,sName='results',iNGWAS=None,iNPGI=None):
         """
-        Construct 2 PGIs in hold-out sample based on classical GWAS estimates,
-        where PGI 1 is based on 1st GWAS discovery sample and PGI 2 is based
-        on 2nd GWAS discovery sample, where all samples are non-overlapping,
-        and where GWASs consider only one child per family
-        
+        Make 2 PGIs in hold-out sample based on 2 sets of GWAS estimates for Y
+        (GWASs use non-overlapping samples and data on only child per family)
+                
         Attributes
         ----------
         sName : string, optional
@@ -759,11 +757,11 @@ class gnames:
         simulator.PerformGWAS()
         print('Writing PLINK files (genotypes.bed,.bim,.fam,.phe)')
         simulator.MakeBed()
-        print('Making GRM in GCTA binary format '+\
-              '(genotypes.grm.bin,.grm.N.bin,.grm.id)')
+        print('Making GRM in GCTA binary format')
+        print('(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
-        print('Constructing out-of-sample PGIs based on classical GWAS '+\
-              'estimates from two non-overlapping samples, drawing 1 child '+\
-              'per family for the GWASs')
+        print('Making 2 PGIs in hold-out sample based on 2 sets of')
+        print('GWAS estimates for Y (GWASs use non-overlapping samples')
+        print('and data on only child per family)')
         simulator.MakeTwoPGIs()
         print('Runtime: '+str(round(dTime,3))+' seconds')
