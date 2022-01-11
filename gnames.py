@@ -219,11 +219,11 @@ class gnames:
         self.dRhoAM=dRhoAM
         self.dVarGN=dVarGN
         self.rng=np.random.RandomState(iSeed)
+        self.__set_loadings_rho_sib_e()
         self.__draw_alleles()
         self.__draw_afs(dBetaAF0,dMAF0)
         self.__draw_betas()
         self.__draw_gen0()
-        self.__set_loadings_rho_sib_e()
     
     def Simulate(self,iGenerations=1):
         """
