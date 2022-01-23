@@ -29,30 +29,22 @@ class gnames:
         number of children per mating pair; default=2
     
     dHsqY : float in [0,1], optional
-        heritability of main trait Y without genetic-nurture effects;
-        default=0.5
+        heritability of main trait Y; default=0.5
     
-    dHsqAM : float in [0,1], optional
-        heritability of assortative-mating trait AM; default=0.5
+    dPropGN : float in [0,1], optional
+        proportion of variance of Y accounted for by genetetic nurture (GN);
+        default=0.25
     
-    dRhoG : float in [-1,+1], optional
-        genetic correlation of AM and Y without genetic-nurture effects;
-        default=1
-        
-    dRhoE : float in [-1,+1], optional
-        environment correlation of AM and Y without genetic-nurture effects;
-        default=1
+    dCorrYAM : float in [-1,+1], optional
+        correlation of assortative-mating (AM) trait and Y (uncorrelated
+        part drawn as Gaussian noise); default=1
     
     dRhoAM : float in [-1,+1], optional
-        assortattive-mating strenght = correlation in AM between mates;
-        default=0.8
+        AM strenght = correlation in AM trait between mates;
+        default=0.5
     
-    dRhoSibE : float in [0,+1], optional
+    dRhoSibE : float in [-1,+1], optional
         environment correlation of Y across siblings; default=0
-    
-    dVarGN : float >= 0, optional
-        variance in Y accounted for by genetic-nurture effects, where Y
-        without genetic-nurture effects has variance one; default=1
     
     iSN : int >= 0, optional
         block size of founders when generating founder genotypes;
@@ -124,57 +116,68 @@ class gnames:
                'Standard error','T-test statistic','P-value']
     dPropGWAS=0.4
     dPropPGI=0.2
-    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dRhoSibE=0,dHsqAM=0.5,dRhoG=1,\
-                 dRhoE=1,dRhoAM=0.8,dVarGN=1,iSN=0,iSM=0,dBetaAF0=0.35,\
-                     dMAF0=0.1,iSeed=502421368):
+    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1,\
+                 dRhoAM=0.5,dRhoSibE=0,iSN=0,iSM=0,\
+                 dBetaAF0=0.35,dMAF0=0.1,iSeed=502421368):
         if not(isinstance(iN,int)):
             raise ValueError('Sample size not integer')
         if not(isinstance(iM,int)):
             raise ValueError('Number of SNPs not integer')
         if not(isinstance(iC,int)):
             raise ValueError('Number of children not integer')
+        if not(isinstance(dHsqY,(int,float))):
+            raise ValueError('Heritability of main trait Y is not a number')
+        if not(isinstance(dPropGN,(int,float))):
+            raise ValueError('Proportion of variance in Y accounted for by'+\
+                             ' genetic nurture is not a number')
+        if not(isinstance(dCorrYAM,(int,float))):
+            raise ValueError('Correlation of assortative-mating trait and Y'+\
+                             ' is not a number')
+        if not(isinstance(dRhoAM,(int,float))):
+            raise ValueError('Degree of assortative mating is not a number')
+        if not(isinstance(dRhoSibE,(int,float))):
+            raise ValueError('Environment correlation of Y across siblings'+\
+                             ' not a number')
         if not(isinstance(iSN,int)):
             raise ValueError('Block size for indiviuals not integer')
         if not(isinstance(iSM,int)):
             raise ValueError('Block size for SNPs not integer')
-        if not(isinstance(iSeed,int)):
-            raise ValueError('Seed for random-number generator not integer')
         if not(isinstance(dBetaAF0,(int,float))):
             raise ValueError('Parameter of beta distribution used to draw'+\
                              ' allele frequencies not a number')
         if not(isinstance(dMAF0,(int,float))):
             raise ValueError('Minor-allele-frequency threshold not a number')
-        if not(isinstance(dHsqY,(int,float))):
-            raise ValueError('Heritability of main trait Y is not a number')
-        if not(isinstance(dRhoSibE,(int,float))):
-            raise ValueError('Environment correlation of Y across siblings'+\
-                             ' not a number')
-        if not(isinstance(dHsqAM,(int,float))):
-            raise ValueError('Heritability of assortative-mating trait is'+\
-                             ' not a number')
-        if not(isinstance(dRhoG,(int,float))):
-            raise ValueError('Genetic correlation Y and'+\
-                             ' assortative-mating trait is not a number')
-        if not(isinstance(dRhoE,(int,float))):
-            raise ValueError('Environment correlation Y and'+\
-                             ' assortative-mating trait is not a number')
-        if not(isinstance(dRhoAM,(int,float))):
-            raise ValueError('Degree of assortative mating is not a number')
-        if not(isinstance(dVarGN,(int,float))):
-            raise ValueError('Variance accounted for by genetic nurture is'+\
-                             ' not a number')
+        if not(isinstance(iSeed,int)):
+            raise ValueError('Seed for random-number generator not integer')
         if iN<2:
             raise ValueError('Sample size less than two')
         if iM<1:
             raise ValueError('Number of SNPs less than one')
         if iC<1:
             raise ValueError('Number of children less than one')
+        if dHsqY>1 or dHsqY<0:
+            raise ValueError('Heritability of main trait Y is'+\
+                             ' not constrained to [0,1] interval')
+        if dPropGN>1 or dPropGN<0:
+            raise ValueError('Proportion of variance in Y accounted for by'+\
+                             'genetic nurture is not constrained to [0,1]'+\
+                             ' interval')
+        if (dHsqY+dPropGN)>1:
+            raise ValueError('Heritability and genetic nurture combined'+\
+                             ' explain more than 100% of the variance in Y')
+        if dCorrYAM>1 or dCorrYAM<-1:
+            raise ValueError('Correlation of assortative-mating trait and Y'+\
+                             ' is not constrained to [-1,+1] interval')
+        if dRhoAM>1 or dRhoAM<-1:
+            raise ValueError('Degree of assortative mating is not'+\
+                             ' not constrained to [-1,+1] interval')
+        if dRhoSibE>1 or dRhoSibE<0:
+            raise ValueError('Environment correlation of Y across siblings'+\
+                             ' is not constrained to [0,1] interval')
         if iSN<0:
             raise ValueError('Block size for individuals negative')
         if iSM<0:
             raise ValueError('Block size for SNPs negative')
-        if iSeed<0:
-            raise ValueError('Seed for random-number generator negative')
         if dBetaAF0<=0:
             raise ValueError('Parameter for beta distribution to draw'+\
                              ' allele frequencies is non-positive')
@@ -184,40 +187,18 @@ class gnames:
         if dMAF0>=gnames.dTooHighMAF:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
-        if dHsqY>1 or dHsqY<0:
-            raise ValueError('Heritability of main trait Y is'+\
-                             ' not constrained to [0,1] interval')
-        if dRhoSibE>1 or dRhoSibE<0:
-            raise ValueError('Environment correlation of Y across siblings'+\
-                             ' is not constrained to [0,1] interval')
-        if dHsqAM>1 or dHsqAM<0:
-            raise ValueError('Heritability of assortative-mating trait is'+\
-                             ' not constrained to [0,1] interval')
-        if dRhoG>1 or dRhoG<-1:
-            raise ValueError('Genetic correlation Y and assortative-mating'+\
-                             ' trait is not constrained to [-1,+1] interval')
-        if dRhoE>1 or dRhoE<-1:
-            raise ValueError('Environment correlation Y and assortative-'+\
-                             'mating trait is not constrained to [-1,+1]'+\
-                                 ' interval')
-        if dRhoAM>1 or dRhoAM<-1:
-            raise ValueError('Degree of assortative mating is not'+\
-                             ' not constrained to [-1,+1] interval')
-        if dVarGN<0:
-            raise ValueError('Variance accounted for by genetic nurture is'+\
-                             ' negative')
+        if iSeed<0:
+            raise ValueError('Seed for random-number generator negative')
         self.iN=iN
         self.iM=iM
         self.iC=iC
+        self.dHsqY=dHsqY
+        self.dPropGN=dPropGN       
+        self.dCorrYAM=dCorrYAM       
+        self.dRhoAM=dRhoAM
+        self.dRhoSibE=dRhoSibE
         self.iSN=iSN
         self.iSM=iSM
-        self.dHsqY=dHsqY
-        self.dRhoSibE=dRhoSibE
-        self.dHsqAM=dHsqAM
-        self.dRhoG=dRhoG
-        self.dRhoE=dRhoE
-        self.dRhoAM=dRhoAM
-        self.dVarGN=dVarGN
         self.rng=np.random.RandomState(iSeed)
         self.__set_loadings_rho_sib_e()
         self.__draw_alleles()
@@ -230,8 +211,8 @@ class gnames:
         Simulate data for a given number of new generations
         
         Simulates offspring genotypes and phenotypes under assortative mating
-        of parents, where the phenotypes include Y and AM, where Y is subject
-        to genetic nurture effects, and AM is the assortative-mating trait
+        of parents, where main phenotype Y is subject to genetic nurture,
+        and AM is the assortative-mating trait
         
         Attributes
         ----------
@@ -278,9 +259,7 @@ class gnames:
     def __draw_betas(self):
         print('Drawing true SNP effects')
         vScaling=(2*self.vAF0*(1-self.vAF0))**(-0.5)
-        self.vBetaY=self.rng.normal(size=self.iM)*vScaling
-        self.vBetaAM=self.dRhoG*self.vBetaY+\
-            ((1-self.dRhoG**2)**0.5)*self.rng.normal(size=self.iM)*vScaling
+        self.vBetaHsq=self.rng.normal(size=self.iM)*vScaling
         self.vBetaGN=self.rng.normal(size=self.iM)*vScaling
     
     def __draw_gen0(self):
@@ -351,31 +330,27 @@ class gnames:
         iC=1
         if self.iT>0:
             iC=self.iC
-        self.mYGN=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
-        vYGNold=np.zeros(self.iN)
+        self.mGN=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
         if self.iT>0:
-            vYGNold=(self.dVarGN**0.5)*((self.vYGNold-self.vYGNold.mean())\
-                                        /self.vYGNold.std())
-        mGY=(self.mG*self.vBetaY[None,None,:]).mean(axis=2)
-        mGAM=(self.mG*self.vBetaAM[None,None,:]).mean(axis=2)
+            vGNold=(self.dPropGN**0.5)*((self.vGNold-self.vGNold.mean())\
+                                        /self.vGNold.std())
+        else:
+            vGNold=(self.dPropGN**0.5)*self.rng.normal(size=self.iN)
+        mGY=(self.mG*self.vBetaHsq[None,None,:]).mean(axis=2)
         mEY=self.rng.normal(size=(iC,self.iN))
         if self.iT>0:
             mEY=self.mWeightSibE@mEY
-        mEAM=self.dRhoE*mEY+\
-            ((1-self.dRhoE**2)**0.5)*self.rng.normal(size=(iC,self.iN))
-        mGY=(mGY-mGY.mean())/mGY.std()
-        mGAM=(mGAM-mGAM.mean())/mGAM.std()
-        mEY=(mEY-mEY.mean())/mEY.std()
-        mEAM=(mEAM-mEAM.mean())/mEAM.std()
-        self.mY=(self.dHsqY**0.5)*mGY+((1-self.dHsqY)**0.5)*mEY\
-            +vYGNold[None,:]
-        self.mYAM=(self.dHsqAM**0.5)*mGAM+((1-self.dHsqAM)**0.5)*mEAM
+        mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
+        mEY=((1-(self.dHsqY+self.dPropGN))**0.5)*((mEY-mEY.mean())/mEY.std())
+        self.mY=mGY+mEY+vGNold[None,:]
+        self.mAM=self.dCorrYAM*self.mY\
+            +((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=(iC,self.iN))
     
     def __match(self):
         iC=1
         if self.iT>0:
             iC=self.iC
-        self.vYGNold=np.empty((int(iC*self.iN/2)))
+        self.vGNold=np.empty((int(iC*self.iN/2)))
         self.vYM=np.empty((int(iC*self.iN/2)))
         self.vYF=np.empty((int(iC*self.iN/2)))
         self.mGM=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
@@ -389,10 +364,10 @@ class gnames:
                 ((1-self.dRhoAM**2)**0.5)*self.rng.normal(size=int(self.iN/2))
             vX1rank=vX1.argsort().argsort()
             vX2rank=vX2.argsort().argsort()
-            vIndM=vIndM[self.mYAM[i,vIndM].argsort()][vX1rank]
-            vIndF=vIndF[self.mYAM[i,vIndF].argsort()][vX2rank]
-            self.vYGNold[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
-                self.mYGN[i,vIndM]+self.mYGN[i,vIndF]
+            vIndM=vIndM[self.mAM[i,vIndM].argsort()][vX1rank]
+            vIndF=vIndF[self.mAM[i,vIndF].argsort()][vX2rank]
+            self.vGNold[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
+                self.mGN[i,vIndM]+self.mGN[i,vIndF]
             self.vYM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
                 self.mY[i,vIndM]
             self.vYF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
@@ -739,11 +714,10 @@ class gnames:
         iN=1000
         iM=10000
         iT=10
-        dHsqAM=1
         print('TEST OF GNAMES')
         print('with 1000 founders, 10,000 SNPs, and two children per pair')
         print('INITIALISING SIMULATOR')
-        simulator=gnames(iN,iM,dHsqAM=dHsqAM)
+        simulator=gnames(iN,iM)
         print('Highest diagonal element of GRM for founders = '+\
               str(round(max(simulator.ComputeDiagsGRM()),3)))
         print('SIMULATING '+str(iT)+' GENERATIONS')
