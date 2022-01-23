@@ -43,10 +43,10 @@ Drawing alleles for SNPs of founders
 Drawing allele frequencies for SNPs of founders
 Drawing true SNP effects
 Drawing genotypes founders
-Highest diagonal element of GRM for founders = 1.056
+Highest diagonal element of GRM for founders = 1.048
 SIMULATING 10 GENERATIONS
-100%|█████████████████████████| 10/10 [00:03<00:00,  2.53it/s]
-Highest diagonal element of GRM after 10 generations = 1.09
+100%|█████████████████████████| 10/10 [00:03<00:00,  2.72it/s]
+Highest diagonal element of GRM after 10 generations = 1.066
 GENERATING OUTPUT
 Calculating and storing classical GWAS and within-family GWAS
 results based on offspring data last generation
@@ -56,10 +56,10 @@ Making GRM in GCTA binary format
 Making 2 PGIs in hold-out sample based on 2 sets of
 GWAS estimates for Y (GWASs use non-overlapping samples
 and data on only child per family)
-Runtime: 4.567 seconds
+Runtime: 4.262 seconds
 ```
 
-This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.056 to 1.09 over the ten generations.
+This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.048 to 1.066 over the ten generations.
 
 In addition, `gnames` performed a classical GWAS and a within-family GWAS based on the offspring data for the last generation. Results are exported to human-readable files: `results.GWAS.classical.txt` and `results.GWAS.within_family.txt`.
 
@@ -102,7 +102,7 @@ gsimulator.MakeGRM('n1000.m10000.t1000')
 
 :warning: This code may take about ten minutes to run, as the code simulates data on 10,000 SNPs for 1000 founders, after which 1000 (!) subsequent generations of offspring data are drawn.
 
-The plot that is created near the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of strong assortative mating in this simulation, we can see that the diagonal elements of the GRM have considerably shifted away from one over the generations.
+The plot that is created near the end of the code shows the diagonal elements of the GRM sorted from small to large for the founders (blue line) and for the 1000th offspring generation (orange line). As a result of considerable assortative mating in this simulation, we can see that the diagonal elements of the GRM have considerably shifted away from one over the generations.
 
 In addition, this bit of code shows how `gnames` can be used to calculate GWAS summary statistics based on the last generation, here yielding files named `n1000.m10000.t1000.GWAS.classical.txt` and `n1000.m10000.t1000.GWAS.within_family.txt`.
 
