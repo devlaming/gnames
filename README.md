@@ -45,7 +45,7 @@ Drawing true SNP effects
 Drawing genotypes founders
 Highest diagonal element of GRM for founders = 1.048
 SIMULATING 10 GENERATIONS
-100%|█████████████████████████| 10/10 [00:03<00:00,  2.72it/s]
+100%|█████████████████████████| 10/10 [00:03<00:00,  2.71it/s]
 Highest diagonal element of GRM after 10 generations = 1.066
 GENERATING OUTPUT
 Calculating and storing classical GWAS and within-family GWAS
@@ -53,10 +53,10 @@ results based on offspring data last generation
 Writing PLINK files (genotypes.bed,.bim,.fam,.phe)
 Making GRM in GCTA binary format
 (genotypes.grm.bin,.grm.N.bin,.grm.id)
-Making 2 PGIs in hold-out sample based on 2 sets of
-GWAS estimates for Y (GWASs use non-overlapping samples
-and data on only child per family)
-Runtime: 4.262 seconds
+Making 3 PGIs in hold-out sample based on 3 sets of
+GWAS estimates (GWAS 1 & 2: non-overlapping; GWAS 3: pooled;
+all sampling 1 child per family)
+Runtime: 4.289 seconds
 ```
 
 This output shows `gnames` simulated a founder population comprising 1000 individuals and 10,000 SNPs. Subsequently, `gnames` simulated ten generations of offspring data under genetic nurture and assortative mating. `gnames` reports that the highest element of the diagonal of the GRM increased from 1.048 to 1.066 over the ten generations.
@@ -67,7 +67,7 @@ Moreover, `gnames` created a set of PLINK binary files: `genotypes.bed`, `genoty
 
 Also, `gnames` created a set of GRM files in GCTA binary format: `genotypes.grm.id`, `genotypes.grm.bin`, and `genotypes.grm.N.bin`. These files combined with `genotypes.phe` can easily be used for follow-up analyses using tools such as [MGREML](https://www.github.com/devlaming/mgreml) and [GCTA](https://yanglab.westlake.edu.cn/software/gcta/).
 
-Finally, `gnames` performed two classical GWASs (*i*) using data on only child per family for (*ii*) two non-overlapping sets of families, where (*iii*) 40% of the families are considered in each GWAS, and used the resulting two sets of GWAS estimates for polygenic prediction out-of-sample for all children for the remaining 20% of the families. Resulting polygenic scores (PGSs) or polygenic indices (PGIs) can be found in `results.pgs` and the true phenotypes in `results.phe`.
+Finally, `gnames` performed three classical GWASs (*i*) using data on only child per family (*ii*) for two non-overlapping sets of families in GWAS 1 and 2 and (iii) for these two GWAS samples pooled in GWAS 3, where (*iv*) 40% of the families are considered in GWAS 1 and 2, and, thus, 80% in GWAS 3. These 3 sets of GWAS results are used for polygenic prediction out-of-sample for all children for the remaining 20% of the families. Resulting polygenic scores (PGSs) or polygenic indices (PGIs) can be found together with the true phenotype in `results.pgs`.
 
 The whole simulation, four GWASs, polygenic prediction, and export to PLINK binary files and to GCTA binary GRM files took less than five seconds.
 
