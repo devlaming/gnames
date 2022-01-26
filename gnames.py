@@ -89,7 +89,7 @@ class gnames:
         Make 2 PGIs in hold-out sample based on 2 sets of GWAS estimates for Y
         (GWASs use non-overlapping samples and data on only child per family)
     '''
-    dTooHighMAF=0.45
+    dTooHighMAFThreshold=0.45
     tIDs=('FID','IID')
     sSNPIDs='SNP'
     lPheno=['Y']
@@ -184,7 +184,7 @@ class gnames:
         if dMAF0<=0:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' non-positive')
-        if dMAF0>=gnames.dTooHighMAF:
+        if dMAF0>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         if iSeed<0:
@@ -612,7 +612,7 @@ class gnames:
             raise ValueError('Minor-allele-frequency threshold not a number')
         if dMAF<0:
             raise ValueError('Minor-allele-frequency threshold is negative')
-        if dMAF>=gnames.dTooHighMAF:
+        if dMAF>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         (mA,iM)=self.__compute_grm(dMAF)
@@ -633,7 +633,7 @@ class gnames:
             raise ValueError('Minor-allele-frequency threshold not a number')
         if dMAF<0:
             raise ValueError('Minor-allele-frequency threshold is negative')
-        if dMAF>=gnames.dTooHighMAF:
+        if dMAF>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
         vEAF=self.mG.mean(axis=(0,1))/2
