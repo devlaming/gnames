@@ -655,6 +655,7 @@ class gnames:
     
     def __calculate_pgi(self,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
         vB=self.__do_standard_gwas(iC=1,iN0=iN0GWAS,iN1=iN1GWAS,bExport=False)
+        vB[np.isnan(vB)]=0
         mPGI=(self.mG[:,iN0PGI:iN1PGI]*vB[None,None,:]).sum(axis=2)
         return mPGI
     
