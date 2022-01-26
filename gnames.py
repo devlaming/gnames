@@ -111,7 +111,6 @@ class gnames:
     binBED3=bytes([0b00000001])
     iNperByte=4
     lAlleles=['A','C','G','T']
-    iPloidy=2
     lGWAScol=['Baseline Allele','Effect Allele','Per-allele effect estimate',\
                'Standard error','T-test statistic','P-value']
     dPropGWAS=0.4
@@ -237,7 +236,7 @@ class gnames:
         print('Drawing alleles for SNPs of founders')
         self.vChr=np.zeros(self.iM,dtype=np.uint8)
         self.lSNPs=['SNP_'+str(i+1) for i in range(self.iM)]
-        lA1A2=[self.rng.choice(gnames.lAlleles,size=gnames.iPloidy,\
+        lA1A2=[self.rng.choice(gnames.lAlleles,size=2,\
                                replace=False) for i in range(self.iM)]
         mA1A2=np.array(lA1A2)
         self.vA1=mA1A2[:,0]
