@@ -85,9 +85,10 @@ class gnames:
     PerformGWAS(sName='results')
         Perform classical GWAS and within-family GWAS based on offspring data
     
-    MakeTwoPGIs(sName='results',iNGWAS=None,iNPGI=None)
-        Make 2 PGIs in hold-out sample based on 2 sets of GWAS estimates for Y
-        (GWASs use non-overlapping samples and data on only child per family)
+    MakeThreePGIs(sName='results',iNGWAS=None,iNPGI=None)
+        Perform 2 GWASs on non-overlapping samples, considering 1 child per
+        family. Also perform a GWAS on these 2 GWAS samples pooled. Use these
+        3 sets of GWAS estimates to construct 3 PGIs in the hold-out sample
     '''
     dTooHighMAFThreshold=0.45
     tIDs=('FID','IID')
@@ -643,14 +644,13 @@ class gnames:
             .mean(axis=2).ravel()
         return vDiag
     
-    def __pgi_to_dataframe(self,iGWASNo,mPGI,iN0,iN1):
+    def __outcome_pgs_to_dataframe(self,sName,mPGI,iN0,iN1):
         lFID=self.lFID[iN0:iN1]
         dfPGI=pd.DataFrame()
         for i in range(self.iC):
             lIC=self.lIC[i][iN0:iN1]
             miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
-            dfPGI=dfPGI.append(pd.DataFrame(mPGI[i],miC,\
-                                            ['PGI from GWAS'+str(iGWASNo)]))
+            dfPGI=dfPGI.append(pd.DataFrame(mPGI[i],miC,[sName]))
         return dfPGI
     
     def __calculate_pgi(self,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
@@ -658,18 +658,27 @@ class gnames:
         mPGI=(self.mG[:,iN0PGI:iN1PGI]*vB[None,None,:]).sum(axis=2)
         return mPGI
     
-    def __write_pgs(self,sName,iNGWAS,iNPGI):
+    def __write_pgs_pheno(self,sName,iNGWAS,iNPGI):
         mPGI1=self.__calculate_pgi(0,iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
         mPGI2=self.__calculate_pgi(iNGWAS,2*iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI1=self.__pgi_to_dataframe(1,mPGI1,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI2=self.__pgi_to_dataframe(2,mPGI2,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI=dfPGI1.join(dfPGI2)
+        mPGI3=self.__calculate_pgi(0,2*iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
+        mY=self.mY[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]
+        dfY=self.__outcome_pgs_to_dataframe('Y',\
+                                       mY,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',\
+                                       mPGI1,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',\
+                                       mPGI2,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI3=self.__outcome_pgs_to_dataframe('PGI GWAS pooled',\
+                                       mPGI3,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI=dfY.join(dfPGI1).join(dfPGI2).join(dfPGI3)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
     
-    def MakeTwoPGIs(self,sName='results',iNGWAS=None,iNPGI=None):
+    def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None):
         """
-        Make 2 PGIs in hold-out sample based on 2 sets of GWAS estimates for Y
-        (GWASs use non-overlapping samples and data on only child per family)
+        Make 3 PGIs in hold-out sample based on 3 sets of GWAS estimates for Y,
+        where GWAS 1 and 2 use non-overlapping samples and data on only one
+        child per family, and GWAS 3 pools the samples used in GWAS 1 and 2
                 
         Attributes
         ----------
@@ -702,8 +711,7 @@ class gnames:
         if (2*iNGWAS+iNPGI)>self.iN:
             raise ValueError('N too low for desired N(GWAS) and N(PGI)')
         self.__create_dataframes(bPhenoOnly=True)
-        self.__write_phe(sName)
-        self.__write_pgs(sName,iNGWAS,iNPGI)
+        self.__write_pgs_pheno(sName,iNGWAS,iNPGI)
     
     def Test():
         """
@@ -733,8 +741,8 @@ class gnames:
         print('Making GRM in GCTA binary format')
         print('(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
-        print('Making 2 PGIs in hold-out sample based on 2 sets of')
-        print('GWAS estimates for Y (GWASs use non-overlapping samples')
+        print('Making 3 PGIs in hold-out sample based on 3 sets of')
+        print('GWAS estimates (GWAS 1 & 2: non-overlapping; GWAS 3: pooled ')
         print('and data on only child per family)')
-        simulator.MakeTwoPGIs()
+        simulator.MakeThreePGIs()
         print('Runtime: '+str(round(dTime,3))+' seconds')
