@@ -113,7 +113,8 @@ class gnames:
     iNperByte=4
     lAlleles=['A','C','G','T']
     lGWAScol=['Baseline Allele','Effect Allele','Per-allele effect estimate',\
-               'Standard error','T-test statistic','P-value']
+               'Standard error','T-test statistic','P-value',\
+                   'Effect Allele Frequency']
     dPropGWAS=0.4
     dPropPGI=0.2
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1,\
@@ -387,7 +388,7 @@ class gnames:
         for i in range(self.iC):
             self.lIC[i]=['Child'+str(i+1)]*iF
     
-    def __create_dataframes(self,bPhenoOnly=False):
+    def __create_dataframes(self):
         if self.iT<1:
             raise SyntaxError('Cannot create DataFrames for founders')
         self.__assign_ids()
@@ -395,18 +396,15 @@ class gnames:
         miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
         dfY=pd.DataFrame(self.vYM,miM,gnames.lPheno)        
         dfY=dfY.append(pd.DataFrame(self.vYF,miF,gnames.lPheno))
-        if not(bPhenoOnly):
-            dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
-            dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
+        dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
+        dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
         for i in range(self.iC):
             miC=pd.MultiIndex.from_arrays([self.lFID,self.lIC[i]],\
                                           names=gnames.tIDs)
             dfY=dfY.append(pd.DataFrame(self.mY[i],miC,gnames.lPheno))
-            if not(bPhenoOnly):
-                dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
+            dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
         self.dfY=dfY    
-        if not(bPhenoOnly):
-            self.dfG=dfG
+        self.dfG=dfG
     
     def __write_fam(self,sName):
         with open(sName+gnames.sFamExt,'w') as oFile:
@@ -517,6 +515,7 @@ class gnames:
             iN*((self.mG[0:iC,iN0:iN1].mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
+        vAF=(self.mG[0:iC,iN0:iN1].mean(axis=(0,1)))/2
         if bExport:
             if sName is None:
                 raise ValueError('Prefix for GWAS files is not defined')
@@ -526,12 +525,12 @@ class gnames:
             vSE=((vSSR/(iN-1))/vXTX)**0.5
             vT=vB/vSE
             vP=2*t.cdf(-abs(vT),iN-1)
-            dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+            dfGWAS=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP,vAF),\
                                 columns=self.lSNPs,index=gnames.lGWAScol).T
             dfGWAS.index.name=gnames.sSNPIDs
             dfGWAS.to_csv(sName+gnames.sGWASExt,sep='\t',na_rep='NA')
         else:
-            return vB
+            return vB,vAF
     
     def __do_wf_gwas(self,sName=None,bExport=True):
         mY=self.mY-self.mY.mean(axis=0)[None,:]
@@ -543,6 +542,7 @@ class gnames:
             iC*((self.mG.mean(axis=0))**2)).sum(axis=0)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
+        vAF=(self.mG.mean(axis=(0,1)))/2
         if bExport:
             if sName is None:
                 raise ValueError('Prefix for GWAS files is not defined')
@@ -553,12 +553,12 @@ class gnames:
             vSE=((vSSR/(iN-iF))/vXTX)**0.5
             vT=vB/vSE
             vP=2*t.cdf(-abs(vT),iN-1)
-            dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP),\
+            dfGWAS_WF=pd.DataFrame((self.vA1,self.vA2,vB,vSE,vT,vP,vAF),\
                                 columns=self.lSNPs,index=gnames.lGWAScol).T
             dfGWAS_WF.index.name=gnames.sSNPIDs
             dfGWAS_WF.to_csv(sName+gnames.sWFExt,sep='\t',na_rep='NA')
         else:
-            return vB
+            return vB,vAF
     
     def __compute_grm(self,dMAF):
         vEAF=self.mG.mean(axis=(0,1))/2
@@ -653,16 +653,25 @@ class gnames:
             dfPGI=dfPGI.append(pd.DataFrame(mPGI[i],miC,[sName]))
         return dfPGI
     
-    def __calculate_pgi(self,iN0GWAS,iN1GWAS,iN0PGI,iN1PGI):
-        vB=self.__do_standard_gwas(iC=1,iN0=iN0GWAS,iN1=iN1GWAS,bExport=False)
-        vB[np.isnan(vB)]=0
-        mPGI=(self.mG[:,iN0PGI:iN1PGI]*vB[None,None,:]).sum(axis=2)
-        return mPGI
-    
-    def __write_pgs_pheno(self,sName,iNGWAS,iNPGI):
-        mPGI1=self.__calculate_pgi(0,iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
-        mPGI2=self.__calculate_pgi(iNGWAS,2*iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
-        mPGI3=self.__calculate_pgi(0,2*iNGWAS,2*iNGWAS,2*iNGWAS+iNPGI)
+    def __write_pgs_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
+        vB1,vAF1=self.__do_standard_gwas(iC=1,iN0=0,iN1=iNGWAS,\
+                                         bExport=False)
+        vB2,vAF2=self.__do_standard_gwas(iC=1,iN0=iNGWAS,iN1=2*iNGWAS,\
+                                         bExport=False)
+        vBP,vAFP=self.__do_standard_gwas(iC=1,iN0=0,iN1=2*iNGWAS,\
+                                         bExport=False)
+        vDrop=(vAF1<=dMAFThreshold)|(vAF2<=dMAFThreshold)|\
+            (vAFP<=dMAFThreshold)|(vAF1>=(1-dMAFThreshold))|\
+                (vAF2>=(1-dMAFThreshold))|(vAFP>=(1-dMAFThreshold))
+        vB1[vDrop]=0
+        vB2[vDrop]=0
+        vBP[vDrop]=0
+        mPGI1=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
+               vB1[None,None,:]).mean(axis=2)
+        mPGI2=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
+               vB2[None,None,:]).mean(axis=2)
+        mPGIP=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
+               vBP[None,None,:]).mean(axis=2)
         mY=self.mY[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]
         dfY=self.__outcome_pgs_to_dataframe('Y',\
                                        mY,2*iNGWAS,2*iNGWAS+iNPGI)
@@ -670,12 +679,13 @@ class gnames:
                                        mPGI1,2*iNGWAS,2*iNGWAS+iNPGI)
         dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',\
                                        mPGI2,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI3=self.__outcome_pgs_to_dataframe('PGI GWAS pooled',\
-                                       mPGI3,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI=dfY.join(dfPGI1).join(dfPGI2).join(dfPGI3)
+        dfPGIP=self.__outcome_pgs_to_dataframe('PGI GWAS Pooled',\
+                                       mPGIP,2*iNGWAS,2*iNGWAS+iNPGI)
+        dfPGI=dfY.join(dfPGI1).join(dfPGI2).join(dfPGIP)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
     
-    def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None):
+    def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
+                      dMAFThreshold=0):
         """
         Make 3 PGIs in hold-out sample based on 3 sets of GWAS estimates for Y,
         where GWAS 1 and 2 use non-overlapping samples and data on only one
@@ -694,6 +704,11 @@ class gnames:
         iNPGI : int, optional
             sample size for calculating PGIs;
             default=None, which corresponds to using 20% of the families
+        
+        dMAFThreshold : float in [0,0.45), optional
+            MAF threshold that SNPs need to meet in all GWAS samples to be
+            included in PGIs; default=0, which corresponds to excluding SNPs
+            with MAF exactly equal to zero
         """
         if self.iT<1:
             raise SyntaxError('Cannot create PGIs for founders')
@@ -705,14 +720,20 @@ class gnames:
             raise ValueError('GWAS sample size non-integer')
         if not(isinstance(iNPGI,int)):
             raise ValueError('PGI sample size non-integer')
+        if not(isinstance(dMAFThreshold,(int,float))):
+            raise ValueError('Minor-allele-frequency threshold not a number')
         if iNGWAS<1:
             raise ValueError('GWAS sample size non-positive')
         if iNPGI<1:
             raise ValueError('PGI sample size non-positive')
         if (2*iNGWAS+iNPGI)>self.iN:
             raise ValueError('N too low for desired N(GWAS) and N(PGI)')
-        self.__create_dataframes(bPhenoOnly=True)
-        self.__write_pgs_pheno(sName,iNGWAS,iNPGI)
+        if dMAFThreshold<0:
+            raise ValueError('Minor-allele-frequency threshold is negative')
+        if dMAFThreshold>=gnames.dTooHighMAFThreshold:
+            raise ValueError('Minor-allele-frequency threshold is '+\
+                             'unreasonably high')
+        self.__write_pgs_pheno(sName,iNGWAS,iNPGI,dMAFThreshold)
     
     def Test():
         """
@@ -745,5 +766,5 @@ class gnames:
         print('Making 3 PGIs in hold-out sample based on 3 sets of')
         print('GWAS estimates (GWAS 1 & 2: non-overlapping; GWAS 3: pooled;')
         print('all sampling 1 child per family)')
-        simulator.MakeThreePGIs()
+        simulator.MakeThreePGIs(dMAFThreshold=0.01)
         print('Runtime: '+str(round(dTime,3))+' seconds')
