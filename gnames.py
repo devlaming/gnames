@@ -496,26 +496,23 @@ class gnames:
         self.__do_standard_gwas(sName)
         self.__do_wf_gwas(sName)
     
-    def __do_standard_gwas(self,sName=None,iC=None,iN0=None,iN1=None,\
-                           bExport=True):
+    def __do_standard_gwas(self,sName=None,iC=None,vFamInd=None,bExport=True):
         if iC is None:
             iC=self.mY.shape[0]
-        if iN0 is None:
-            iN0=0
-        if iN1 is None:
-            iN1=self.mY.shape[1]
-        mY=self.mY[0:iC,iN0:iN1]-self.mY[0:iC,iN0:iN1].mean()
+        if vFamInd is None:
+            vFamInd=np.arange(self.mY.shape[1])
+        mY=self.mY[0:iC,vFamInd]-self.mY[0:iC,vFamInd].mean()
         iN=int(np.prod(mY.shape))
-        vXTY=(self.mG[0:iC,iN0:iN1]*mY[:,:,None]).sum(axis=(0,1))
-        vXTX=(self.mG[0:iC,iN0:iN1]**2).sum(axis=(0,1))-\
-            iN*((self.mG[0:iC,iN0:iN1].mean(axis=(0,1)))**2)
+        vXTY=(self.mG[0:iC,vFamInd]*mY[:,:,None]).sum(axis=(0,1))
+        vXTX=(self.mG[0:iC,vFamInd]**2).sum(axis=(0,1))-\
+            iN*((self.mG[0:iC,vFamInd].mean(axis=(0,1)))**2)
         vXTX[vXTX<np.finfo(float).eps]=np.nan
         vB=vXTY/vXTX
-        vAF=(self.mG[0:iC,iN0:iN1].mean(axis=(0,1)))/2
+        vAF=(self.mG[0:iC,vFamInd].mean(axis=(0,1)))/2
         if bExport:
             if sName is None:
                 raise ValueError('Prefix for GWAS files is not defined')
-            mYhat=self.mG[0:iC,iN0:iN1]*vB[None,None,:]
+            mYhat=self.mG[0:iC,vFamInd]*vB[None,None,:]
             vSSR=(mY**2).sum()-2*((mYhat*mY[:,:,None]).sum(axis=(0,1)))+\
                 (mYhat**2).sum(axis=(0,1))-iN*((mYhat.mean(axis=(0,1)))**2)
             vSE=((vSSR/(iN-1))/vXTX)**0.5
@@ -640,43 +637,40 @@ class gnames:
             .mean(axis=2).ravel()
         return vDiag
     
-    def __outcome_pgs_to_dataframe(self,sName,mPGI,iN0,iN1):
-        lFID=self.lFID[iN0:iN1]
+    def __outcome_pgs_to_dataframe(self,sName,mYorPGI,vFamInd):
+        lFID=np.array(self.lFID)[vFamInd].tolist()
         dfPGI=pd.DataFrame()
         for i in range(self.iC):
-            lIC=self.lIC[i][iN0:iN1]
+            lIC=np.array(self.lIC[i])[vFamInd].tolist()
             miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
-            dfPGI=dfPGI.append(pd.DataFrame(mPGI[i],miC,[sName]))
+            dfPGI=dfPGI.append(pd.DataFrame(mYorPGI[i],miC,[sName]))
         return dfPGI
     
     def __write_pgs_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
-        vB1,vAF1=self.__do_standard_gwas(iC=1,iN0=0,iN1=iNGWAS,\
-                                         bExport=False)
-        vB2,vAF2=self.__do_standard_gwas(iC=1,iN0=iNGWAS,iN1=2*iNGWAS,\
-                                         bExport=False)
-        vBP,vAFP=self.__do_standard_gwas(iC=1,iN0=0,iN1=2*iNGWAS,\
-                                         bExport=False)
+        self.__assign_ids()
+        vInd=self.rng.permutation(self.iN)
+        vFamInd1=np.sort(vInd[0:iNGWAS])
+        vFamInd2=np.sort(vInd[iNGWAS:2*iNGWAS])
+        vFamIndP=np.sort(vInd[0:2*iNGWAS])
+        vFamIndOut=np.sort(vInd[2*iNGWAS:2*iNGWAS+iNPGI])
+        vB1,vAF1=self.__do_standard_gwas(iC=1,vFamInd=vFamInd1,bExport=False)
+        vB2,vAF2=self.__do_standard_gwas(iC=1,vFamInd=vFamInd2,bExport=False)
+        vBP,vAFP=self.__do_standard_gwas(iC=1,vFamInd=vFamIndP,bExport=False)
         vDrop=(vAF1<=dMAFThreshold)|(vAF2<=dMAFThreshold)|\
             (vAFP<=dMAFThreshold)|(vAF1>=(1-dMAFThreshold))|\
                 (vAF2>=(1-dMAFThreshold))|(vAFP>=(1-dMAFThreshold))
         vB1[vDrop]=0
         vB2[vDrop]=0
         vBP[vDrop]=0
-        mPGI1=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
-               vB1[None,None,:]).mean(axis=2)
-        mPGI2=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
-               vB2[None,None,:]).mean(axis=2)
-        mPGIP=(self.mG[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]*\
-               vBP[None,None,:]).mean(axis=2)
-        mY=self.mY[:,(2*iNGWAS):(2*iNGWAS+iNPGI)]
-        dfY=self.__outcome_pgs_to_dataframe('Y',\
-                                       mY,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',\
-                                       mPGI1,2*iNGWAS,2*iNGWAS+iNPGI)
-        dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',\
-                                       mPGI2,2*iNGWAS,2*iNGWAS+iNPGI)
+        mPGI1=(self.mG[:,vFamIndOut]*vB1[None,None,:]).mean(axis=2)
+        mPGI2=(self.mG[:,vFamIndOut]*vB2[None,None,:]).mean(axis=2)
+        mPGIP=(self.mG[:,vFamIndOut]*vBP[None,None,:]).mean(axis=2)
+        mY=self.mY[:,vFamIndOut]
+        dfY=self.__outcome_pgs_to_dataframe('Y',mY,vFamIndOut)
+        dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
+        dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
         dfPGIP=self.__outcome_pgs_to_dataframe('PGI GWAS Pooled',\
-                                       mPGIP,2*iNGWAS,2*iNGWAS+iNPGI)
+                                       mPGIP,vFamIndOut)
         dfPGI=dfY.join(dfPGI1).join(dfPGI2).join(dfPGIP)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
     
