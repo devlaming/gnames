@@ -311,9 +311,54 @@ class gnames:
         mThisG[mU>(self.vTau1[None,iMstart:iMstart+iMadd])]=2
         self.mG[0,iNstart:iNstart+iNadd,iMstart:iMstart+iMadd]=mThisG
     
+    def __draw_y(self):
+        if self.iT==0:
+            self.vGN=self.rng.normal(size=self.iN)
+        vGN=(self.dPropGN**0.5)*((self.vGN-self.vGN.mean())/self.vGN.std())
+        self.mGN1=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
+        mGY=(self.mG*self.vBetaHsq[None,None,:]).mean(axis=2)
+        mEY=self.rng.normal(size=mGY.shape)
+        if self.iT>0:
+            mEY=self.mWeightSibE@mEY
+        mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
+        mEY=((1-(self.dHsqY+self.dPropGN))**0.5)*((mEY-mEY.mean())/mEY.std())
+        self.mY=mGY+mEY+vGN[None,:]
+        self.mAM=self.dCorrYAM*self.mY\
+            +((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=mGY.shape)
+    
+    def __match(self):
+        if self.iT>0:
+            iMatingGroups=self.iC
+        else:
+            iMatingGroups=1
+        iParentPairs=int(self.iN/2)
+        iParentPairsTotal=int(iParentPairs*iMatingGroups)
+        self.vGN=np.empty(iParentPairsTotal)
+        self.vYM=np.empty(iParentPairsTotal)
+        self.vYF=np.empty(iParentPairsTotal)
+        self.mGM=np.empty((iParentPairsTotal,self.iM),dtype=np.int8)
+        self.mGF=np.empty((iParentPairsTotal,self.iM),dtype=np.int8)
+        for i in range(iMatingGroups):
+            vInd=self.rng.permutation(iParentPairs*2)
+            vIndM=vInd[0:iParentPairs]
+            vIndF=vInd[iParentPairs:]
+            vX1=self.rng.normal(size=iParentPairs)
+            vX2=self.dRhoAM*vX1+\
+                ((1-self.dRhoAM**2)**0.5)*self.rng.normal(size=iParentPairs)
+            vX1rank=vX1.argsort().argsort()
+            vX2rank=vX2.argsort().argsort()
+            vIndM=vIndM[self.mAM[i,vIndM].argsort()][vX1rank]
+            vIndF=vIndF[self.mAM[i,vIndF].argsort()][vX2rank]
+            self.vGN[i*iParentPairs:(i+1)*iParentPairs]=\
+                self.mGN1[i,vIndM]+self.mGN1[i,vIndF]
+            self.vYM[i*iParentPairs:(i+1)*iParentPairs]=self.mY[i,vIndM]
+            self.vYF[i*iParentPairs:(i+1)*iParentPairs]=self.mY[i,vIndF]
+            self.mGM[i*iParentPairs:(i+1)*iParentPairs]=self.mG[i,vIndM]
+            self.mGF[i*iParentPairs:(i+1)*iParentPairs]=self.mG[i,vIndF]
+    
     def __mate(self):
         self.iT+=1
-        self.iN=self.mGM.shape[0]
+        self.iN=len(self.vGN)
         self.mG=np.empty((self.iC,self.iN,self.iM),dtype=np.int8)
         mCM=np.zeros((self.iN,self.iM),dtype=np.int8)
         mCF=np.zeros((self.iN,self.iM),dtype=np.int8)
@@ -326,55 +371,6 @@ class gnames:
             mGC[self.mGF==1]+=\
                 (self.rng.uniform(size=((self.mGF==1).sum()))>0.5)
             self.mG[i,:,:]=mGC
-    
-    def __draw_y(self):
-        iC=1
-        if self.iT>0:
-            iC=self.iC
-        self.mGN=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
-        if self.iT>0:
-            vGNold=(self.dPropGN**0.5)*((self.vGNold-self.vGNold.mean())\
-                                        /self.vGNold.std())
-        else:
-            vGNold=(self.dPropGN**0.5)*self.rng.normal(size=self.iN)
-        mGY=(self.mG*self.vBetaHsq[None,None,:]).mean(axis=2)
-        mEY=self.rng.normal(size=(iC,self.iN))
-        if self.iT>0:
-            mEY=self.mWeightSibE@mEY
-        mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
-        mEY=((1-(self.dHsqY+self.dPropGN))**0.5)*((mEY-mEY.mean())/mEY.std())
-        self.mY=mGY+mEY+vGNold[None,:]
-        self.mAM=self.dCorrYAM*self.mY\
-            +((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=(iC,self.iN))
-    
-    def __match(self):
-        iC=1
-        if self.iT>0:
-            iC=self.iC
-        self.vGNold=np.empty((int(iC*self.iN/2)))
-        self.vYM=np.empty((int(iC*self.iN/2)))
-        self.vYF=np.empty((int(iC*self.iN/2)))
-        self.mGM=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
-        self.mGF=np.empty((int(iC*self.iN/2),self.iM),dtype=np.int8)
-        for i in range(iC):
-            vInd=self.rng.permutation(self.iN)
-            vIndM=vInd[0:int(self.iN/2)]
-            vIndF=vInd[int(self.iN/2):]
-            vX1=self.rng.normal(size=int(self.iN/2))
-            vX2=self.dRhoAM*vX1+\
-                ((1-self.dRhoAM**2)**0.5)*self.rng.normal(size=int(self.iN/2))
-            vX1rank=vX1.argsort().argsort()
-            vX2rank=vX2.argsort().argsort()
-            vIndM=vIndM[self.mAM[i,vIndM].argsort()][vX1rank]
-            vIndF=vIndF[self.mAM[i,vIndF].argsort()][vX2rank]
-            self.vGNold[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
-                self.mGN[i,vIndM]+self.mGN[i,vIndF]
-            self.vYM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
-                self.mY[i,vIndM]
-            self.vYF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=\
-                self.mY[i,vIndF]
-            self.mGM[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndM]
-            self.mGF[i*int(self.iN/2):(i+1)*int(self.iN/2)]=self.mG[i,vIndF]
     
     def __assign_ids(self):
         if self.iT<1:
