@@ -716,7 +716,7 @@ class gnames:
             raise ValueError('GWAS sample size non-positive')
         if iNPGI<1:
             raise ValueError('PGI sample size non-positive')
-        if (2*iNGWAS+iNPGI)>self.iN:
+        if ((2*self.iC*iNGWAS)+iNPGI)>(self.iC*self.iN):
             raise ValueError('N too low for desired N(GWAS) and N(PGI)')
         if dMAFThreshold<0:
             raise ValueError('Minor-allele-frequency threshold is negative')
