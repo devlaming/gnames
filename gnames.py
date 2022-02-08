@@ -390,15 +390,15 @@ class gnames:
         self.__assign_ids()
         miM=pd.MultiIndex.from_arrays([self.lFID,self.lIM],names=gnames.tIDs)
         miF=pd.MultiIndex.from_arrays([self.lFID,self.lIF],names=gnames.tIDs)
-        dfY=pd.DataFrame(self.vYM,miM,gnames.lPheno)        
-        dfY=dfY.append(pd.DataFrame(self.vYF,miF,gnames.lPheno))
-        dfG=pd.DataFrame(self.mGM,miM,self.lSNPs)
-        dfG=dfG.append(pd.DataFrame(self.mGF,miF,self.lSNPs))
+        dfY=pd.concat((pd.DataFrame(self.vYM,miM,gnames.lPheno),\
+                       pd.DataFrame(self.vYF,miF,gnames.lPheno)))
+        dfG=pd.concat((pd.DataFrame(self.mGM,miM,self.lSNPs),\
+                       pd.DataFrame(self.mGF,miF,self.lSNPs)))
         for i in range(self.iC):
             miC=pd.MultiIndex.from_arrays([self.lFID,self.lIC[i]],\
                                           names=gnames.tIDs)
-            dfY=dfY.append(pd.DataFrame(self.mY[i],miC,gnames.lPheno))
-            dfG=dfG.append(pd.DataFrame(self.mG[i],miC,self.lSNPs))
+            dfY=pd.concat((dfY,pd.DataFrame(self.mY[i],miC,gnames.lPheno)))
+            dfG=pd.concat((dfG,pd.DataFrame(self.mG[i],miC,self.lSNPs)))
         self.dfY=dfY    
         self.dfG=dfG
     
@@ -644,7 +644,7 @@ class gnames:
         for i in range(self.iC):
             lIC=np.array(self.lIC[i])[vFamInd].tolist()
             miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
-            dfPGI=dfPGI.append(pd.DataFrame(mYorPGI[i],miC,[sName]))
+            dfPGI=pd.concat((dfPGI,pd.DataFrame(mYorPGI[i],miC,[sName])))
         return dfPGI
     
     def __write_pgs_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
