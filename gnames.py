@@ -643,7 +643,10 @@ class gnames:
     def __outcome_pgi_to_dataframe(self,sName,mYorPGI,vFamInd):
         lFID=np.array(self.lFID)[vFamInd].tolist()
         dfPGI=pd.DataFrame()
-        mYorPGI=(mYorPGI-mYorPGI.mean())/mYorPGI.std()
+        dStDev=mYorPGI.std()
+        if dStDev==0:
+            dStDev=1
+        mYorPGI=(mYorPGI-mYorPGI.mean())/dStDev
         for i in range(self.iC):
             lIC=np.array(self.lIC[i])[vFamInd].tolist()
             miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
@@ -688,8 +691,8 @@ class gnames:
         iYMEFF=self.iM-((vAF==0).sum()+(vAF==1).sum())
         iPGIMEFF=self.iM-(vDrop.sum())
         with open(sName+gnames.sINFOExt,'w') as oInfoWriter:
-            oInfoWriter.write('Effective #SNPs in Y = '+str(iYMEFF)+'\n')
-            oInfoWriter.write('Effective #SNPs in PGIs = '+str(iPGIMEFF))
+            oInfoWriter.write('#SNPs directly affecting Y = '+str(iYMEFF)+'\n')
+            oInfoWriter.write('#SNPs used to construct PGIs = '+str(iPGIMEFF))
     
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
                       dMAFThreshold=0):
