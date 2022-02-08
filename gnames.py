@@ -106,7 +106,7 @@ class gnames:
     sGrmIdExt='.grm.id'
     sGWASExt='.GWAS.classical.txt'
     sWFExt='.GWAS.within_family.txt'
-    sPGIExt='.pgs'
+    sPGIExt='.pgi'
     sINFOExt='.info'
     binBED1=bytes([0b01101100])
     binBED2=bytes([0b00011011])
@@ -640,7 +640,7 @@ class gnames:
             .mean(axis=2).ravel()
         return vDiag
     
-    def __outcome_pgs_to_dataframe(self,sName,mYorPGI,vFamInd):
+    def __outcome_pgi_to_dataframe(self,sName,mYorPGI,vFamInd):
         lFID=np.array(self.lFID)[vFamInd].tolist()
         dfPGI=pd.DataFrame()
         mYorPGI=(mYorPGI-mYorPGI.mean())/mYorPGI.std()
@@ -650,7 +650,7 @@ class gnames:
             dfPGI=pd.concat((dfPGI,pd.DataFrame(mYorPGI[i],miC,[sName])))
         return dfPGI
     
-    def __write_pgs_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
+    def __write_pgi_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
         self.__assign_ids()
         vInd=self.rng.permutation(self.iN)
         vFamInd1=np.sort(vInd[0:iNGWAS])
@@ -673,13 +673,13 @@ class gnames:
         mGY=self.mGY[:,vFamIndOut]
         mEY=self.mEY[:,vFamIndOut]
         mGN=np.tile(self.vGN[vFamIndOut],(self.iC,1))
-        dfY=self.__outcome_pgs_to_dataframe('Y',mY,vFamIndOut)
-        dfGY=self.__outcome_pgs_to_dataframe('G',mGY,vFamIndOut)
-        dfEY=self.__outcome_pgs_to_dataframe('E',mEY,vFamIndOut)
-        dfGN=self.__outcome_pgs_to_dataframe('N',mGN,vFamIndOut)
-        dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
-        dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
-        dfPGIP=self.__outcome_pgs_to_dataframe('PGI GWAS Pooled',\
+        dfY=self.__outcome_pgi_to_dataframe('Y',mY,vFamIndOut)
+        dfGY=self.__outcome_pgi_to_dataframe('G',mGY,vFamIndOut)
+        dfEY=self.__outcome_pgi_to_dataframe('E',mEY,vFamIndOut)
+        dfGN=self.__outcome_pgi_to_dataframe('N',mGN,vFamIndOut)
+        dfPGI1=self.__outcome_pgi_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
+        dfPGI2=self.__outcome_pgi_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
+        dfPGIP=self.__outcome_pgi_to_dataframe('PGI GWAS Pooled',\
                                        mPGIP,vFamIndOut)
         dfPGI=dfY.join(dfGY).join(dfEY).join(dfGN).join(dfPGI1).join(dfPGI2)\
             .join(dfPGIP)
@@ -740,7 +740,7 @@ class gnames:
         if dMAFThreshold>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is '+\
                              'unreasonably high')
-        self.__write_pgs_pheno(sName,iNGWAS,iNPGI,dMAFThreshold)
+        self.__write_pgi_pheno(sName,iNGWAS,iNPGI,dMAFThreshold)
     
     def Test():
         """
