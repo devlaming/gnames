@@ -320,9 +320,9 @@ class gnames:
         mEY=self.rng.normal(size=mGY.shape)
         if self.iT>0:
             mEY=self.mWeightSibE@mEY
-        mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
+        self.mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
         mEY=((1-(self.dHsqY+self.dPropGN))**0.5)*((mEY-mEY.mean())/mEY.std())
-        self.mY=mGY+mEY+vGN[None,:]
+        self.mY=self.mGY+mEY+vGN[None,:]
         self.mAM=self.dCorrYAM*self.mY\
             +((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=mGY.shape)
     
@@ -667,12 +667,14 @@ class gnames:
         mPGI2=(self.mG[:,vFamIndOut]*vB2[None,None,:]).mean(axis=2)
         mPGIP=(self.mG[:,vFamIndOut]*vBP[None,None,:]).mean(axis=2)
         mY=self.mY[:,vFamIndOut]
+        mGY=self.mGY[:,vFamIndOut]
         dfY=self.__outcome_pgs_to_dataframe('Y',mY,vFamIndOut)
+        dfGY=self.__outcome_pgs_to_dataframe('True G of Y',mGY,vFamIndOut)
         dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
         dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
         dfPGIP=self.__outcome_pgs_to_dataframe('PGI GWAS Pooled',\
                                        mPGIP,vFamIndOut)
-        dfPGI=dfY.join(dfPGI1).join(dfPGI2).join(dfPGIP)
+        dfPGI=dfY.join(dfGY).join(dfPGI1).join(dfPGI2).join(dfPGIP)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
     
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
