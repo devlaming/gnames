@@ -10,7 +10,7 @@ dPropGN=0
 #OTHER SPECS
 iC=2
 iT=10
-iM=1000
+iM=2000
 dHsqY=0.25
 dCorrYAM=1
 dGWASMAF=0.01

@@ -9,7 +9,7 @@ dRhoAM=0
 #OTHER SPECS
 iC=2
 iT=10
-iM=1000
+iM=2000
 dHsqY=0.25
 dPropGN=0.5*dHsqY
 dCorrYAM=1
