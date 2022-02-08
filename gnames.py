@@ -107,6 +107,7 @@ class gnames:
     sGWASExt='.GWAS.classical.txt'
     sWFExt='.GWAS.within_family.txt'
     sPGIExt='.pgs'
+    sINFOExt='.info'
     binBED1=bytes([0b01101100])
     binBED2=bytes([0b00011011])
     binBED3=bytes([0b00000001])
@@ -314,15 +315,17 @@ class gnames:
     def __draw_y(self):
         if self.iT==0:
             self.vGN=self.rng.normal(size=self.iN)
-        vGN=(self.dPropGN**0.5)*((self.vGN-self.vGN.mean())/self.vGN.std())
+        self.vGN=(self.dPropGN**0.5)\
+            *((self.vGN-self.vGN.mean())/self.vGN.std())
         self.mGN1=(self.mG*self.vBetaGN[None,None,:]).mean(axis=2)
         mGY=(self.mG*self.vBetaHsq[None,None,:]).mean(axis=2)
         mEY=self.rng.normal(size=mGY.shape)
         if self.iT>0:
             mEY=self.mWeightSibE@mEY
         self.mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
-        mEY=((1-(self.dHsqY+self.dPropGN))**0.5)*((mEY-mEY.mean())/mEY.std())
-        self.mY=self.mGY+mEY+vGN[None,:]
+        self.mEY=((1-(self.dHsqY+self.dPropGN))**0.5)\
+            *((mEY-mEY.mean())/mEY.std())
+        self.mY=self.mGY+self.mEY+self.vGN[None,:]
         self.mAM=self.dCorrYAM*self.mY\
             +((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=mGY.shape)
     
@@ -668,14 +671,25 @@ class gnames:
         mPGIP=(self.mG[:,vFamIndOut]*vBP[None,None,:]).mean(axis=2)
         mY=self.mY[:,vFamIndOut]
         mGY=self.mGY[:,vFamIndOut]
+        mEY=self.mEY[:,vFamIndOut]
+        mGN=np.tile(self.vGN[vFamIndOut],(self.iC,1))
         dfY=self.__outcome_pgs_to_dataframe('Y',mY,vFamIndOut)
-        dfGY=self.__outcome_pgs_to_dataframe('True G of Y',mGY,vFamIndOut)
+        dfGY=self.__outcome_pgs_to_dataframe('G',mGY,vFamIndOut)
+        dfEY=self.__outcome_pgs_to_dataframe('E',mEY,vFamIndOut)
+        dfGN=self.__outcome_pgs_to_dataframe('N',mGN,vFamIndOut)
         dfPGI1=self.__outcome_pgs_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
         dfPGI2=self.__outcome_pgs_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
         dfPGIP=self.__outcome_pgs_to_dataframe('PGI GWAS Pooled',\
                                        mPGIP,vFamIndOut)
-        dfPGI=dfY.join(dfGY).join(dfPGI1).join(dfPGI2).join(dfPGIP)
+        dfPGI=dfY.join(dfGY).join(dfEY).join(dfGN).join(dfPGI1).join(dfPGI2)\
+            .join(dfPGIP)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
+        vAF=(self.mG.mean(axis=(0,1)))/2
+        iYMEFF=self.iM-((vAF==0).sum()+(vAF==1).sum())
+        iPGIMEFF=self.iM-(vDrop.sum())
+        with open(sName+gnames.sINFOExt,'w') as oInfoWriter:
+            oInfoWriter.write('Effective #SNPs in Y = '+str(iYMEFF)+'\n')
+            oInfoWriter.write('Effective #SNPs in PGIs = '+str(iPGIMEFF))
     
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
                       dMAFThreshold=0):
