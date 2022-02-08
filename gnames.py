@@ -640,6 +640,7 @@ class gnames:
     def __outcome_pgs_to_dataframe(self,sName,mYorPGI,vFamInd):
         lFID=np.array(self.lFID)[vFamInd].tolist()
         dfPGI=pd.DataFrame()
+        mYorPGI=(mYorPGI-mYorPGI.mean())/mYorPGI.std()
         for i in range(self.iC):
             lIC=np.array(self.lIC[i])[vFamInd].tolist()
             miC=pd.MultiIndex.from_arrays([lFID,lIC],names=gnames.tIDs)
