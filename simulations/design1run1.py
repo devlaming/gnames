@@ -1,10 +1,11 @@
 import numpy as np
 from gnames import gnames
-#DESIGN 1: Various GWAS sample sizes, with no assortative mating
+#DESIGN 1: Various GWAS sample sizes, no assortative mating
 iDESIGN=1
 vNGWAS=np.array((1000,2000,5000,10000))
 iNPRED=20000
 iSETTINGS=len(vNGWAS)+1
+dRhoAM=0
 #OTHER SPECS
 iC=2
 iT=10
@@ -12,7 +13,6 @@ iM=1000
 dHsqY=0.25
 dPropGN=0.5*dHsqY
 dCorrYAM=1
-dRhoAM=0
 dGWASMAF=0.01
 #RUN NUMBER
 iR=1
