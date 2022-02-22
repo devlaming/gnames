@@ -267,11 +267,13 @@ class gnames:
     def __draw_gen0(self):
         self.__draw_g0()
         self.__draw_y()
+        self.bIDsAssigned=False
     
     def __draw_next_gen(self):
         self.__match()
         self.__mate()
         self.__draw_y()
+        self.bIDsAssigned=False
     
     def __draw_g0(self):
         print('Drawing genotypes founders')
@@ -376,16 +378,18 @@ class gnames:
             self.mG[i,:,:]=mGC
     
     def __assign_ids(self):
-        if self.iT<1:
-            raise SyntaxError('Cannot assign IDs for founders')
-        iF=self.mGM.shape[0]
-        self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
-              for i in range(iF)]
-        self.lIM=[gnames.sMat]*iF
-        self.lIF=[gnames.sPat]*iF
-        self.lIC=['']*self.iC
-        for i in range(self.iC):
-            self.lIC[i]=['Child'+str(i+1)]*iF
+        if not(self.bIDsAssigned):
+            if self.iT<1:
+                raise SyntaxError('Cannot assign IDs for founders')
+            iF=self.mGM.shape[0]
+            self.lFID=['Generation'+str(self.iT)+'_Family'+str(i+1)\
+                  for i in range(iF)]
+            self.lIM=[gnames.sMat]*iF
+            self.lIF=[gnames.sPat]*iF
+            self.lIC=['']*self.iC
+            for i in range(self.iC):
+                self.lIC[i]=['Child'+str(i+1)]*iF
+            self.bIDsAssigned=True
     
     def __create_dataframes(self):
         if self.iT<1:
@@ -556,36 +560,36 @@ class gnames:
         else:
             return vB,vAF
     
-    def __compute_grm(self,dMAF):
-        vEAF=self.mG.mean(axis=(0,1))/2
+    def __compute_grm(self,dMAF,vFamInd):
+        vEAF=self.mG[:,vFamInd].mean(axis=(0,1))/2
         vKeep=(vEAF>dMAF)*(vEAF<(1-dMAF))
         iM=vKeep.sum()
         vEAF=vEAF[vKeep]
-        mX=(self.mG[:,:,vKeep]-2*vEAF[None,None,:])/\
+        mX=(self.mG[:,vFamInd][:,:,vKeep]-2*vEAF[None,None,:])/\
             (((2*vEAF*(1-vEAF))**0.5)[None,None,:])
-        iN=int(self.mG.shape[0]*self.mG.shape[1])
+        iN=int(self.mG.shape[0]*len(vFamInd))
         mA=((np.tensordot(mX,mX,axes=(2,2)))/iM).reshape((iN,iN))\
             .astype(np.float32)
         return mA,iM
     
     def __write_grm(self,sName,mA,iM):
-        iN=int(self.mG.shape[0]*self.mG.shape[1])
+        iN=int(mA.shape[0])
         (vIndR,vIndC)=np.tril_indices(iN)
         vA=(mA[vIndR,vIndC]).astype(np.float32)
         vM=(np.ones(vA.shape)*iM).astype(np.float32)
         vA.tofile(sName+gnames.sGrmBinExt)
         vM.tofile(sName+gnames.sGrmBinNExt)
     
-    def __write_ids(self,sName):
+    def __write_ids(self,sName,vFamInd):
         self.__assign_ids()
         with open(sName+gnames.sGrmIdExt,'w') as oFile:
             for i in range(self.iC):
                 sFIDsIIDs=''
-                for j in range(self.iN):
+                for j in vFamInd:
                     sFIDsIIDs+=self.lFID[j]+"\t"+self.lIC[i][j]+"\n"
                 oFile.write(sFIDsIIDs)
     
-    def MakeGRM(self,sName='genotypes',dMAF=0.01):
+    def MakeGRM(self,sName='genotypes',dMAF=0.01,vFamInd=None):
         """
         Make GRM in GCTA binary format
         
@@ -597,6 +601,10 @@ class gnames:
         dMAF : float in (0,0.45), optional
             SNPs with an empirical minor-allele frequency below this threshold
             are excluded from calculation of the GRM
+        
+        vFamInd : np.array, optional
+            indices of families for which to construct GRM;
+            default=None, which corresponds to all families
         """
         if self.iT<1:
             raise SyntaxError('Cannot create GRM for founders')
@@ -611,9 +619,11 @@ class gnames:
         if dMAF>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is'+\
                              ' unreasonably high')
-        (mA,iM)=self.__compute_grm(dMAF)
+        if vFamInd is None:
+            vFamInd=np.arange(self.mY.shape[1])
+        (mA,iM)=self.__compute_grm(dMAF,vFamInd)
         self.__write_grm(sName,mA,iM)
-        self.__write_ids(sName)
+        self.__write_ids(sName,vFamInd)
     
     def ComputeDiagsGRM(self,dMAF=0.01):
         """
@@ -680,19 +690,22 @@ class gnames:
         dfGY=self.__outcome_pgi_to_dataframe('G',mGY,vFamIndOut)
         dfEY=self.__outcome_pgi_to_dataframe('E',mEY,vFamIndOut)
         dfGN=self.__outcome_pgi_to_dataframe('N',mGN,vFamIndOut)
+        dfPGIT=self.__outcome_pgi_to_dataframe('PGI True',mGY+mGN,vFamIndOut)
         dfPGI1=self.__outcome_pgi_to_dataframe('PGI GWAS 1',mPGI1,vFamIndOut)
         dfPGI2=self.__outcome_pgi_to_dataframe('PGI GWAS 2',mPGI2,vFamIndOut)
         dfPGIP=self.__outcome_pgi_to_dataframe('PGI GWAS Pooled',\
                                        mPGIP,vFamIndOut)
-        dfPGI=dfY.join(dfGY).join(dfEY).join(dfGN).join(dfPGI1).join(dfPGI2)\
-            .join(dfPGIP)
+        dfPGI=dfY.join(dfGY).join(dfEY).join(dfGN).join(dfPGIT).join(dfPGI1)\
+            .join(dfPGI2).join(dfPGIP)
         dfPGI.to_csv(sName+gnames.sPGIExt,sep='\t',na_rep='NA')
+        dfPGI['Y'].to_csv(sName+gnames.sPheExt,sep='\t',na_rep='NA')
         vAF=(self.mG.mean(axis=(0,1)))/2
         iYMEFF=self.iM-((vAF==0).sum()+(vAF==1).sum())
         iPGIMEFF=self.iM-(vDrop.sum())
         with open(sName+gnames.sINFOExt,'w') as oInfoWriter:
             oInfoWriter.write('#SNPs directly affecting Y = '+str(iYMEFF)+'\n')
             oInfoWriter.write('#SNPs used to construct PGIs = '+str(iPGIMEFF))
+        self.MakeGRM(sName,dMAFThreshold,vFamIndOut)
     
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
                       dMAFThreshold=0):
@@ -773,7 +786,7 @@ class gnames:
         print('Making GRM in GCTA binary format')
         print('(genotypes.grm.bin,.grm.N.bin,.grm.id)')
         simulator.MakeGRM()
-        print('Making 3 PGIs in hold-out sample based on 3 sets of')
+        print('Making GRM and 3 PGIs in hold-out sample based on 3 sets of')
         print('GWAS estimates (GWAS 1 & 2: non-overlapping; GWAS 3: pooled;')
         print('all sampling 1 child per family)')
         simulator.MakeThreePGIs(dMAFThreshold=0.01)
