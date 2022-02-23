@@ -88,7 +88,8 @@ class gnames:
     MakeThreePGIs(sName='results',iNGWAS=None,iNPGI=None)
         Perform 2 GWASs on non-overlapping samples, considering 1 child per
         family. Also perform a GWAS on these 2 GWAS samples pooled. Use these
-        3 sets of GWAS estimates to construct 3 PGIs in the hold-out sample
+        3 sets of GWAS estimates to construct 3 PGIs in the hold-out sample.
+        For the hold-out sample, export these PGIs, the GRM, and phenotype.
     '''
     dTooHighMAFThreshold=0.45
     tIDs=('FID','IID')
@@ -201,10 +202,12 @@ class gnames:
         self.dRhoSibE=dRhoSibE
         self.iSN=iSN
         self.iSM=iSM
+        self.dBetaAF0=dBetaAF0
+        self.dMAF0=dMAF0
         self.rng=np.random.RandomState(iSeed)
         self.__set_loadings_rho_sib_e()
         self.__draw_alleles()
-        self.__draw_afs(dBetaAF0,dMAF0)
+        self.__draw_afs()
         self.__draw_betas()
         self.__draw_gen0()
     
@@ -247,13 +250,13 @@ class gnames:
         self.vCM=np.zeros(self.iM,dtype=np.uint8)
         self.vPos=np.arange(self.iM)+1
     
-    def __draw_afs(self,dBetaAF0,dMAF0):
+    def __draw_afs(self):
         print('Drawing allele frequencies for SNPs of founders')
-        vAF=self.rng.beta(dBetaAF0,dBetaAF0,self.iM)
-        while (min(vAF)<dMAF0)|(max(vAF)>(1-dMAF0)):
-            vAF[vAF<dMAF0]=self.rng.beta(dBetaAF0,dBetaAF0,np.sum(vAF<dMAF0))
-            vAF[vAF>(1-dMAF0)]=\
-                self.rng.beta(dBetaAF0,dBetaAF0,np.sum(vAF>(1-dMAF0)))
+        vAF=self.rng.beta(self.dBetaAF0,self.dBetaAF0,self.iM)
+        while (min(vAF)<self.dMAF0)|(max(vAF)>(1-self.dMAF0)):
+            vAF[vAF<self.dMAF0]=self.rng.beta(self.dBetaAF0,self.dBetaAF0,np.sum(vAF<self.dMAF0))
+            vAF[vAF>(1-self.dMAF0)]=\
+                self.rng.beta(self.dBetaAF0,self.dBetaAF0,np.sum(vAF>(1-self.dMAF0)))
         self.vAF0=vAF
         self.vTau0=(1-vAF)**2
         self.vTau1=1-(vAF**2)
@@ -333,17 +336,17 @@ class gnames:
     
     def __match(self):
         if self.iT>0:
-            iMatingGroups=self.iC
+            iMatingSets=self.iC
         else:
-            iMatingGroups=1
+            iMatingSets=1
         iParentPairs=int(self.iN/2)
-        iParentPairsTotal=int(iParentPairs*iMatingGroups)
+        iParentPairsTotal=int(iParentPairs*iMatingSets)
         self.vGN=np.empty(iParentPairsTotal)
         self.vYM=np.empty(iParentPairsTotal)
         self.vYF=np.empty(iParentPairsTotal)
         self.mGM=np.empty((iParentPairsTotal,self.iM),dtype=np.int8)
         self.mGF=np.empty((iParentPairsTotal,self.iM),dtype=np.int8)
-        for i in range(iMatingGroups):
+        for i in range(iMatingSets):
             vInd=self.rng.permutation(iParentPairs*2)
             vIndM=vInd[0:iParentPairs]
             vIndF=vInd[iParentPairs:]
@@ -572,7 +575,8 @@ class gnames:
             .astype(np.float32)
         return mA,iM
     
-    def __write_grm(self,sName,mA,iM):
+    @staticmethod
+    def __write_grm(sName,mA,iM):
         iN=int(mA.shape[0])
         (vIndR,vIndC)=np.tril_indices(iN)
         vA=(mA[vIndR,vIndC]).astype(np.float32)
@@ -622,7 +626,7 @@ class gnames:
         if vFamInd is None:
             vFamInd=np.arange(self.mY.shape[1])
         (mA,iM)=self.__compute_grm(dMAF,vFamInd)
-        self.__write_grm(sName,mA,iM)
+        gnames.__write_grm(sName,mA,iM)
         self.__write_ids(sName,vFamInd)
     
     def ComputeDiagsGRM(self,dMAF=0.01):
@@ -663,7 +667,7 @@ class gnames:
             dfPGI=pd.concat((dfPGI,pd.DataFrame(mYorPGI[i],miC,[sName])))
         return dfPGI
     
-    def __write_pgi_pheno(self,sName,iNGWAS,iNPGI,dMAFThreshold):
+    def __write_pgi_pheno_grm(self,sName,iNGWAS,iNPGI,dMAFThreshold):
         self.__assign_ids()
         vInd=self.rng.permutation(self.iN)
         vFamInd1=np.sort(vInd[0:iNGWAS])
@@ -710,9 +714,10 @@ class gnames:
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
                       dMAFThreshold=0):
         """
-        Make 3 PGIs in hold-out sample based on 3 sets of GWAS estimates for Y,
-        where GWAS 1 and 2 use non-overlapping samples and data on only one
-        child per family, and GWAS 3 pools the samples used in GWAS 1 and 2
+        Perform 2 GWASs on non-overlapping samples, considering 1 child per
+        family. Also perform a GWAS on these 2 GWAS samples pooled. Use these
+        3 sets of GWAS estimates to construct 3 PGIs in the hold-out sample.
+        For the hold-out sample, export these PGIs, the GRM, and phenotype.
                 
         Attributes
         ----------
@@ -756,7 +761,7 @@ class gnames:
         if dMAFThreshold>=gnames.dTooHighMAFThreshold:
             raise ValueError('Minor-allele-frequency threshold is '+\
                              'unreasonably high')
-        self.__write_pgi_pheno(sName,iNGWAS,iNPGI,dMAFThreshold)
+        self.__write_pgi_pheno_grm(sName,iNGWAS,iNPGI,dMAFThreshold)
     
     def Test():
         """
