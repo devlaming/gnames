@@ -352,6 +352,7 @@ class gnames:
         self.mG[0,iF0:iF1,iM0:iM1]=mG
     
     def __draw_y(self):
+        if self.iChunks>1: tCount=tqdm(total=self.iChunks*self.iS)
         mEY=self.rng.normal(size=(self.iS,self.iF))
         if self.iS>1:
             mEY=self.mWeightSibE@mEY
@@ -373,6 +374,8 @@ class gnames:
                     mG=self.mG[h,iF0:iF1,iM0:iM1]
                     self.mGNnew[h,iF0:iF1]+=(mG*vGamma[None,:]).sum(axis=1)
                     mGY[h,iF0:iF1]+=(mG*vBeta[None,:]).sum(axis=1)
+                    if self.iChunks>1: tCount.update(1)
+        if self.iChunks>1: tCount.close()
         self.mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
         self.mY=self.mGY+self.mEY+self.vGN[None,:]
         self.mAM=self.dCorrYAM*self.mY+\
@@ -390,7 +393,7 @@ class gnames:
             vIndP=((self.mFAM[i,:,4]==gnames.iMale).nonzero())[0]
             vX1=self.rng.normal(size=self.iPS)
             vX2=self.dRhoAM*vX1+\
-                ((1-self.dRhoAM**2)**0.5)*self.rng.normal(size=self.iPS)
+                ((1-(self.dRhoAM**2))**0.5)*self.rng.normal(size=self.iPS)
             vX1rank=vX1.argsort().argsort()
             vX2rank=vX2.argsort().argsort()
             vIndM=vIndM[self.mAM[i,vIndM].argsort()][vX1rank]
@@ -405,16 +408,10 @@ class gnames:
     
     def __mate(self):
         self.mG=np.empty((self.iS,self.iF,self.iM),dtype=np.uint8)
-        mCM=np.zeros((self.iF,self.iM),dtype=np.uint8)
-        mCP=np.zeros((self.iF,self.iM),dtype=np.uint8)
-        mCM[self.mGM==2]=1
-        mCP[self.mGP==2]=1
-        mGC0=mCM+mCP
-        mCM=None
-        mCP=None
+        mG02=(self.mGM==2).astype(np.uint8)+(self.mGP==2).astype(np.uint8)
         if self.iChunks>1: tCount=tqdm(total=self.iChunks*self.iS)
         for h in range(self.iS):
-            mGC=mGC0.copy()
+            mGC=mG02.copy()
             for j in range(self.iMT):
                 iM0=self.iSM*j
                 iM1=min(self.iM,iM0+self.iSM)
@@ -434,7 +431,7 @@ class gnames:
                     if self.iChunks>1: tCount.update(1)
             self.mG[h,:,:]=mGC
         if self.iChunks>1: tCount.close()
-        mGC0=None
+        mG02=None
         mGC=None
         self.mGM=None
         self.mGP=None
@@ -535,11 +532,12 @@ class gnames:
             iM0=self.iSM*j
             iM1=min(self.iM,iM0+self.iSM)
             mG=self.mG[iC,vFamInd,iM0:iM1]
-            vAF[iM0:iM1]=(mG.mean(axis=(0,1)))/2
+            vThisAF=mG.mean(axis=(0,1))/2
             vThisXTY=(mG*mY[:,:,None]).sum(axis=(0,1))
-            vThisXTX=(mG**2).sum(axis=(0,1))-iN*((mG.mean(axis=(0,1)))**2)
+            vThisXTX=(mG**2).sum(axis=(0,1))-iN*((vThisAF*2)**2)
             vThisXTX[vThisXTX<np.finfo(float).eps]=np.nan
             vThisB=vThisXTY/vThisXTX
+            vAF[iM0:iM1]=vThisAF
             vXTY[iM0:iM1]=vThisXTY
             vXTX[iM0:iM1]=vThisXTX
             vB[iM0:iM1]=vThisB
