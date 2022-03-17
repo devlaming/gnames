@@ -420,14 +420,12 @@ class gnames:
                     iF0=self.iSFT*i
                     iF1=min(self.iF,iF0+self.iSFT)
                     iF=iF1-iF0
-                    mCH=np.zeros((iF,iM),dtype=np.uint8)
-                    mCH[self.mGM[iF0:iF1,iM0:iM1]==1]+=\
-                        (self.rng.uniform(size=((self.mGM[iF0:iF1,iM0:iM1]==1)\
-                                                .sum()))>0.5)
-                    mCH[self.mGP[iF0:iF1,iM0:iM1]==1]+=\
-                        (self.rng.uniform(size=((self.mGP[iF0:iF1,iM0:iM1]==1)\
-                                                .sum()))>0.5)
-                    mGC[iF0:iF1,iM0:iM1]+=mCH
+                    mG1=np.zeros((iF,iM),dtype=np.uint8)
+                    mM1=self.mGM[iF0:iF1,iM0:iM1]==1
+                    mP1=self.mGP[iF0:iF1,iM0:iM1]==1
+                    mG1[mM1]+=(self.rng.uniform(size=(mM1.sum()))>0.5)
+                    mG1[mP1]+=(self.rng.uniform(size=(mP1.sum()))>0.5)
+                    mGC[iF0:iF1,iM0:iM1]+=mG1
                     if self.iChunks>1: tCount.update(1)
             self.mG[h,:,:]=mGC
         if self.iChunks>1: tCount.close()
