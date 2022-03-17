@@ -24,6 +24,6 @@ for iSetting in range(iSETTINGS):
     dRhoAM=vRhoAM[iSetting]
     iN=(2*iC*iNGWAS)+iNPRED
     sName='DESIGN.'+str(iDESIGN)+'.RHO_AM.'+'{:.2f}'.format(dRhoAM)+'.RUN.'+str(iR)
-    simulator=gnames(iN,iM,iC,dHsqY,dPropGN,dCorrYAM,dRhoAM,iSeed=iThisSeed,iSN=int(iN/2),iSM=int(iM/10))
+    simulator=gnames(iN,iM,iC,dHsqY,dPropGN,dCorrYAM,dRhoAM,iSeed=iThisSeed,iSM=int(iM/10))
     simulator.Simulate(iT)
     simulator.MakeThreePGIs(sName,iNGWAS,iNPRED,dGWASMAF)
