@@ -43,6 +43,11 @@ class gnames:
         AM strenght = correlation in AM trait between mates;
         default=0.5
     
+    dRhoG : float in [-1,+1], optional
+        genetic correlation between main trait Y and secondary trait Y2,
+        where e.g. analysis in hold-out sample uses Y2 instead of Y
+        default=0.75
+    
     dRhoSibE : float in [-1,+1], optional
         environment correlation of Y across siblings; default=0
     
@@ -119,8 +124,8 @@ class gnames:
         'PGI GWAS 2\tPGI GWAS Pooled'
     dPropGWAS=0.4
     dPropPGI=0.2
-    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1,\
-                 dRhoAM=0.5,dRhoSibE=0,iSF=0,iSM=0,\
+    def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1.0,\
+                 dRhoAM=0.5,dRhoG=0.75,dRhoSibE=0.0,iSF=0,iSM=0,\
                  dBetaAF0=0.35,dMAF0=0.1,iSeed=502421368):
         if not(isinstance(iN,int)):
             raise ValueError('Number of founders not integer')
@@ -138,6 +143,8 @@ class gnames:
                              ' is not a number')
         if not(isinstance(dRhoAM,(int,float))):
             raise ValueError('Degree of assortative mating is not a number')
+        if not(isinstance(dRhoG,(int,float))):
+            raise ValueError('Genetic correlation Y and Y2 is not a number')
         if not(isinstance(dRhoSibE,(int,float))):
             raise ValueError('Environment correlation of Y across siblings'+\
                              ' not a number')
@@ -173,6 +180,9 @@ class gnames:
                              ' is not constrained to [-1,+1] interval')
         if dRhoAM>1 or dRhoAM<-1:
             raise ValueError('Degree of assortative mating is not'+\
+                             ' constrained to [-1,+1] interval')
+        if dRhoG>1 or dRhoG<-1:
+            raise ValueError('Genetic correlation between Y and Y2 is'+\
                              ' not constrained to [-1,+1] interval')
         if dRhoSibE>1 or dRhoSibE<0:
             raise ValueError('Environment correlation of Y across siblings'+\
@@ -201,6 +211,7 @@ class gnames:
         self.dPropGN=dPropGN       
         self.dCorrYAM=dCorrYAM       
         self.dRhoAM=dRhoAM
+        self.dRhoG=dRhoG
         self.dRhoSibE=dRhoSibE
         self.dBetaAF0=dBetaAF0
         self.dMAF0=dMAF0
@@ -267,8 +278,16 @@ class gnames:
     def __draw_betas(self):
         print('Drawing true SNP effects')
         vScaling=(2*self.vAF0*(1-self.vAF0))**(-0.5)
-        self.vBeta=self.rng.normal(size=self.iM)*vScaling
-        self.vGamma=self.rng.normal(size=self.iM)*vScaling
+        vX=self.rng.normal(size=self.iM)
+        vY=self.rng.normal(size=self.iM)
+        vZ=self.dRhoG*vX+((1-(self.dRhoG**2))**0.5)*vY
+        self.vBeta=vX*vScaling
+        self.vBeta2=vZ*vScaling
+        vX=self.rng.normal(size=self.iM)
+        vY=self.rng.normal(size=self.iM)
+        vZ=self.dRhoG*vX+((1-(self.dRhoG**2))**0.5)*vY
+        self.vGamma=vX*vScaling
+        self.vGamma2=vZ*vScaling
     
     def __draw_gen0(self):
         self.iT=0
@@ -290,6 +309,8 @@ class gnames:
             self.vPID=np.zeros(self.iP,dtype=np.uint32)
             self.vMID=np.zeros(self.iP,dtype=np.uint32)
             self.vGN=self.rng.normal(size=self.iP)
+            self.vGN2=self.dRhoG*self.vGN+\
+                ((1-(self.dRhoG**2))**0.5)*self.rng.normal(size=self.iP)
             self.iNT=0
             self.iS=1
         else:
@@ -358,32 +379,43 @@ class gnames:
             mEY=self.mWeightSibE@mEY
         self.vGN=(self.dPropGN**0.5)\
             *((self.vGN-self.vGN.mean())/self.vGN.std())
+        self.vGN2=(self.dPropGN**0.5)\
+            *((self.vGN2-self.vGN2.mean())/self.vGN2.std())
         self.mEY=((1-(self.dHsqY+self.dPropGN))**0.5)\
             *((mEY-mEY.mean())/mEY.std())
         self.mGNnew=np.zeros((self.iS,self.iF))
+        self.mGN2new=np.zeros((self.iS,self.iF))
         mGY=np.zeros((self.iS,self.iF))
+        mGY2=np.zeros((self.iS,self.iF))
         for h in range(self.iS):
             for j in range(self.iMT):
                 iM0=self.iSM*j
                 iM1=min(self.iM,iM0+self.iSM)
                 vBeta=self.vBeta[iM0:iM1]
+                vBeta2=self.vBeta2[iM0:iM1]
                 vGamma=self.vGamma[iM0:iM1]
+                vGamma2=self.vGamma2[iM0:iM1]
                 for i in range(self.iFT):
                     iF0=self.iSFT*i
                     iF1=min(self.iF,iF0+self.iSFT)
                     mG=self.mG[h,iF0:iF1,iM0:iM1]
                     self.mGNnew[h,iF0:iF1]+=(mG*vGamma[None,:]).sum(axis=1)
+                    self.mGN2new[h,iF0:iF1]+=(mG*vGamma2[None,:]).sum(axis=1)
                     mGY[h,iF0:iF1]+=(mG*vBeta[None,:]).sum(axis=1)
+                    mGY2[h,iF0:iF1]+=(mG*vBeta2[None,:]).sum(axis=1)
                     if self.iChunks>1: tCount.update(1)
         if self.iChunks>1: tCount.close()
         self.mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
+        self.mGY2=(self.dHsqY**0.5)*((mGY2-mGY2.mean())/mGY2.std())
         self.mY=self.mGY+self.mEY+self.vGN[None,:]
+        self.mY2=self.mGY2+self.mEY+self.vGN2[None,:]
         self.mAM=self.dCorrYAM*self.mY+\
             ((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=(self.iS,\
                                                                 self.iF))
     
     def __match(self):
         self.vGN=np.empty(self.iP)
+        self.vGN2=np.empty(self.iP)
         self.vMID=np.empty(self.iP,dtype=np.uint32)
         self.vPID=np.empty(self.iP,dtype=np.uint32)
         self.mGM=np.empty((self.iP,self.iM),dtype=np.uint8)
@@ -400,6 +432,8 @@ class gnames:
             vIndP=vIndP[self.mAM[i,vIndP].argsort()][vX2rank]
             self.vGN[i*self.iPS:(i+1)*self.iPS]=\
                 self.mGNnew[i,vIndM]+self.mGNnew[i,vIndP]
+            self.vGN2[i*self.iPS:(i+1)*self.iPS]=\
+                self.mGN2new[i,vIndM]+self.mGN2new[i,vIndP]
             self.vMID[i*self.iPS:(i+1)*self.iPS]=self.mFAM[i,vIndM,1]
             self.vPID[i*self.iPS:(i+1)*self.iPS]=self.mFAM[i,vIndP,1]
             self.mGM[i*self.iPS:(i+1)*self.iPS]=self.mG[i,vIndM]
@@ -509,14 +543,28 @@ class gnames:
         self.__do_standard_gwas(sName)
         self.__do_wf_gwas(sName)
     
-    def __do_standard_gwas(self,sName=None,iC=None,vFamInd=None,bExport=True):
+    def __do_standard_gwas(self,sName=None,iC=None,vFamIndY=None,\
+                           vFamIndY2=None,bExport=True):
         if iC is None:
             iC=slice(None)
         else:
             iC=slice(0,iC+1,1)
-        if vFamInd is None:
-            vFamInd=slice(None)
-        mY=self.mY[iC,vFamInd]-self.mY[iC,vFamInd].mean()
+        if vFamIndY is None:
+            if vFamIndY2 is None:
+                vFamInd=slice(None)
+                mY=self.mY[iC,vFamInd]
+            else:
+                vFamInd=vFamIndY2
+                mY=self.mY2[iC,vFamIndY2]
+        else:
+            if vFamIndY2 is None:
+                vFamInd=vFamIndY
+                mY=self.mY[iC,vFamIndY]
+            else:
+                vFamInd=np.hstack((vFamIndY,vFamIndY2))
+                mY=np.hstack((self.mY[iC,vFamIndY],\
+                              self.mY2[iC,vFamIndY2]))
+        mY=mY-mY.mean()
         iN=int(np.prod(mY.shape))
         vAF=np.zeros(self.iM)
         vXTY=np.zeros(self.iM)
@@ -712,15 +760,21 @@ class gnames:
                 vDiag[h*self.iF:(h+1)*self.iF]+=(mX**2).sum(axis=1)
         return vDiag
         
-    def __write_pgi_pheno_grm(self,sName,iFGWAS,iFPGI,dMAFThreshold):
+    def __write_pgi_pheno_grm(self,sName,iFGWAS,iFPGI,dMAFThreshold,\
+                              bY2GWAS1,bY2Out):
         vInd=self.rng.permutation(self.iF)
         vFamInd1=np.sort(vInd[0:iFGWAS])
         vFamInd2=np.sort(vInd[iFGWAS:2*iFGWAS])
         vFamIndP=np.sort(vInd[0:2*iFGWAS])
         vFamIndOut=np.sort(vInd[2*iFGWAS:2*iFGWAS+iFPGI])
-        vB1,vAF1=self.__do_standard_gwas(iC=0,vFamInd=vFamInd1,bExport=False)
-        vB2,vAF2=self.__do_standard_gwas(iC=0,vFamInd=vFamInd2,bExport=False)
-        vBP,vAFP=self.__do_standard_gwas(iC=0,vFamInd=vFamIndP,bExport=False)
+        if bY2GWAS1:
+            vB1,vAF1=self.__do_standard_gwas(iC=0,vFamIndY2=vFamInd1,bExport=False)
+            vBP,vAFP=self.__do_standard_gwas(iC=0,vFamIndY2=vFamInd1,\
+                                             vFamIndY=vFamInd2,bExport=False)
+        else:
+            vB1,vAF1=self.__do_standard_gwas(iC=0,vFamIndY=vFamInd1,bExport=False)
+            vBP,vAFP=self.__do_standard_gwas(iC=0,vFamIndY=vFamIndP,bExport=False)
+        vB2,vAF2=self.__do_standard_gwas(iC=0,vFamIndY=vFamInd2,bExport=False)
         vDrop=(vAF1<=dMAFThreshold)|(vAF2<=dMAFThreshold)|\
             (vAFP<=dMAFThreshold)|(vAF1>=(1-dMAFThreshold))|\
                 (vAF2>=(1-dMAFThreshold))|(vAFP>=(1-dMAFThreshold))
@@ -747,17 +801,23 @@ class gnames:
         vPGI1=mPGI1.reshape(tShape)
         vPGI2=mPGI2.reshape(tShape)
         vPGIP=mPGIP.reshape(tShape)
-        vY=self.mY[:,vFamIndOut].reshape(tShape)
-        vGY=self.mGY[:,vFamIndOut].reshape(tShape)
-        vEY=self.mEY[:,vFamIndOut].reshape(tShape)
-        vGN=np.tile(self.vGN[vFamIndOut],(self.iS,1)).reshape(tShape)
+        if bY2Out:
+            vY=self.mY2[:,vFamIndOut].reshape(tShape)
+            vGY=self.mGY2[:,vFamIndOut].reshape(tShape)
+            vGN=np.tile(self.vGN2[vFamIndOut],(self.iS,1)).reshape(tShape)
+        else:
+            vY=self.mY[:,vFamIndOut].reshape(tShape)
+            vGY=self.mGY[:,vFamIndOut].reshape(tShape)
+            vGN=np.tile(self.vGN[vFamIndOut],(self.iS,1)).reshape(tShape)
         vPGIT=vGY+vGN
+        vEY=self.mEY[:,vFamIndOut].reshape(tShape)
         vAM=self.mAM[:,vFamIndOut].reshape(tShape)
         vFID=self.mFAM[:,vFamIndOut,0].reshape(tShape)
         vIID=self.mFAM[:,vFamIndOut,1].reshape(tShape)
         vPID=self.mFAM[:,vFamIndOut,2].reshape(tShape)
         vMID=self.mFAM[:,vFamIndOut,3].reshape(tShape)
-        mData=np.hstack((vFID,vIID,vPID,vMID,vY,vGY,vEY,vGN,vAM,vPGIT,vPGI1,vPGI2,vPGIP))
+        mData=np.hstack((vFID,vIID,vPID,vMID,vY,vGY,vEY,vGN,vAM,\
+                         vPGIT,vPGI1,vPGI2,vPGIP))
         mY=np.hstack((vFID,vIID,vY))
         vMean=mData[:,4:].mean(axis=0)
         vStd=mData[:,4:].std(axis=0)
@@ -772,12 +832,14 @@ class gnames:
                         +(abs(vAF-1)<np.finfo(float).eps).sum())
         iPGIMEFF=self.iM-(vDrop.sum())
         with open(sName+gnames.sINFOExt,'w') as oInfoWriter:
-            oInfoWriter.write('#SNPs directly affecting Y = '+str(iYMEFF)+'\n')
-            oInfoWriter.write('#SNPs used to construct PGIs = '+str(iPGIMEFF))
+            oInfoWriter.write('#SNPs directly affecting Y = '\
+                              +str(iYMEFF)+'\n')
+            oInfoWriter.write('#SNPs used to construct PGIs = '\
+                              +str(iPGIMEFF))
         self.MakeGRM(sName,dMAFThreshold,vFamIndOut)
     
     def MakeThreePGIs(self,sName='results',iNGWAS=None,iNPGI=None,\
-                      dMAFThreshold=0):
+                      dMAFThreshold=0,bY2GWAS1=False,bY2Out=False):
         """
         Perform 2 GWASs on non-overlapping samples, considering 1 child per
         family. Also perform a GWAS on these 2 GWAS samples pooled. Use these
@@ -804,6 +866,14 @@ class gnames:
             MAF threshold that SNPs need to meet in all GWAS samples to be
             included in PGIs; default=0, which corresponds to excluding SNPs
             with MAF exactly equal to zero
+        
+        bY2GWAS1 : Boolean, optional
+            set to True to use Y2 instead of Y in GWAS 1 sample, where
+            Y and Y2 have imperfect genetic correlation; default=False
+        
+        bY2Out : Boolean, optional
+            set to True to use Y2 instead of Y in hold-out sample, where
+            Y and Y2 have imperfect genetic correlation; default=False
         """
         if iNGWAS is None:
             iNGWAS=int(gnames.dPropGWAS*self.iF)
@@ -813,6 +883,10 @@ class gnames:
             raise ValueError('GWAS sample size non-integer')
         if not(isinstance(iNPGI,int)):
             raise ValueError('PGI sample size non-integer')
+        if not(isinstance(bY2GWAS1,bool)):
+            raise ValueError('Usage of Y2 in GWAS 1 sample not a Boolean')
+        if not(isinstance(bY2Out,bool)):
+            raise ValueError('Usage of Y2 in PGI sample not a Boolean')
         if iNPGI%self.iS>0:
             raise ValueError('PGI sample size not divisible by '+\
             'number of siblings in this generation')
@@ -831,7 +905,8 @@ class gnames:
                              'unreasonably high')
         iFGWAS=iNGWAS
         iFPGI=int(iNPGI/self.iS)
-        self.__write_pgi_pheno_grm(sName,iFGWAS,iFPGI,dMAFThreshold)
+        self.__write_pgi_pheno_grm(sName,iFGWAS,iFPGI,dMAFThreshold,\
+                                   bY2GWAS1,bY2Out)
     
     def Test():
         """
