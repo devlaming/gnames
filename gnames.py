@@ -125,7 +125,7 @@ class gnames:
     dPropGWAS=0.4
     dPropPGI=0.2
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1.0,\
-                 dRhoAM=0.5,dRhoG=0.75,dRhoSibE=0.0,iSF=0,iSM=0,\
+                 dRhoAM=0.5,dRhoG=1.0,dRhoSibE=0.0,iSF=0,iSM=0,\
                  dBetaAF0=0.35,dMAF0=0.1,iSeed=502421368):
         if not(isinstance(iN,int)):
             raise ValueError('Number of founders not integer')
