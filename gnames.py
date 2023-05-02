@@ -71,6 +71,11 @@ class gnames:
         seed for random-number generator used by GNAMES (for replicability);
         default=502421368
     
+    bRescale : Boolean, optional
+        rescale heritable and genetic nurture component in each generation,
+        to keep marginal contribution to phenotypic variance fixed under
+        assortative mating; default=True
+    
     Methods
     -------
     Simulate(iGenerations=1)
@@ -126,7 +131,7 @@ class gnames:
     dPropPGI=0.2
     def __init__(self,iN,iM,iC=2,dHsqY=0.5,dPropGN=0.25,dCorrYAM=1.0,\
                  dRhoAM=0.5,dRhoG=1.0,dRhoSibE=0.0,iSF=0,iSM=0,\
-                 dBetaAF0=0.35,dMAF0=0.1,iSeed=502421368):
+                 dBetaAF0=0.35,dMAF0=0.1,iSeed=502421368,bRescale=True):
         if not(isinstance(iN,int)):
             raise ValueError('Number of founders not integer')
         if not(isinstance(iM,int)):
@@ -202,6 +207,10 @@ class gnames:
                              ' unreasonably high')
         if iSeed<0:
             raise ValueError('Seed for random-number generator negative')
+        if bRescale!=0 and bRescale!=1:
+            raise ValueError('Rescaling for fixed contemporary'+\
+            ' marginal contribution of heritable component'+\
+            ' and nurture component is not a Boolean')
         self.iP=iN
         self.iC=iC
         self.iM=iM
@@ -215,6 +224,7 @@ class gnames:
         self.dRhoSibE=dRhoSibE
         self.dBetaAF0=dBetaAF0
         self.dMAF0=dMAF0
+        self.bRescale=bRescale
         self.rng=np.random.RandomState(iSeed)
         self.__set_loadings_rho_sib_e()
         self.__draw_alleles()
@@ -277,17 +287,17 @@ class gnames:
     
     def __draw_betas(self):
         print('Drawing true SNP effects')
-        vScaling=(2*self.vAF0*(1-self.vAF0))**(-0.5)
+        vScaling=(2*self.vAF0*(1-self.vAF0)*self.iM)**(-0.5)
         vX=self.rng.normal(size=self.iM)
         vY=self.rng.normal(size=self.iM)
         vZ=self.dRhoG*vX+((1-(self.dRhoG**2))**0.5)*vY
-        self.vBeta=vX*vScaling
-        self.vBeta2=vZ*vScaling
+        self.vBeta=vX*vScaling*(self.dHsqY**0.5)
+        self.vBeta2=vZ*vScaling*(self.dHsqY**0.5)
         vX=self.rng.normal(size=self.iM)
         vY=self.rng.normal(size=self.iM)
         vZ=self.dRhoG*vX+((1-(self.dRhoG**2))**0.5)*vY
-        self.vGamma=vX*vScaling
-        self.vGamma2=vZ*vScaling
+        self.vGamma=vX*vScaling*((self.dPropGN/2)**0.5)
+        self.vGamma2=vZ*vScaling*((self.dPropGN/2)**0.5)
     
     def __draw_gen0(self):
         self.iT=0
@@ -311,6 +321,8 @@ class gnames:
             self.vGN=self.rng.normal(size=self.iP)
             self.vGN2=self.dRhoG*self.vGN+\
                 ((1-(self.dRhoG**2))**0.5)*self.rng.normal(size=self.iP)
+            self.vGN=self.vGN*(self.dPropGN**0.5)
+            self.vGN2=self.vGN2*(self.dPropGN**0.5)
             self.iNT=0
             self.iS=1
         else:
@@ -377,10 +389,12 @@ class gnames:
         mEY=self.rng.normal(size=(self.iS,self.iF))
         if self.iS>1:
             mEY=self.mWeightSibE@mEY
-        self.vGN=(self.dPropGN**0.5)\
-            *((self.vGN-self.vGN.mean())/self.vGN.std())
-        self.vGN2=(self.dPropGN**0.5)\
-            *((self.vGN2-self.vGN2.mean())/self.vGN2.std())
+        if self.bRescale:
+            if self.dPropGN>0:
+                self.vGN=(self.dPropGN**0.5)\
+                    *((self.vGN-self.vGN.mean())/self.vGN.std())
+                self.vGN2=(self.dPropGN**0.5)\
+                    *((self.vGN2-self.vGN2.mean())/self.vGN2.std())
         self.mEY=((1-(self.dHsqY+self.dPropGN))**0.5)\
             *((mEY-mEY.mean())/mEY.std())
         self.mGNnew=np.zeros((self.iS,self.iF))
@@ -405,13 +419,18 @@ class gnames:
                     mGY2[h,iF0:iF1]+=(mG*vBeta2[None,:]).sum(axis=1)
                     if self.iChunks>1: tCount.update(1)
         if self.iChunks>1: tCount.close()
-        self.mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
-        self.mGY2=(self.dHsqY**0.5)*((mGY2-mGY2.mean())/mGY2.std())
+        if self.bRescale:
+            if self.dHsqY>0:
+                mGY=(self.dHsqY**0.5)*((mGY-mGY.mean())/mGY.std())
+                mGY2=(self.dHsqY**0.5)*((mGY2-mGY2.mean())/mGY2.std())
+        self.mGY=mGY
+        self.mGY2=mGY2
         self.mY=self.mGY+self.mEY+self.vGN[None,:]
         self.mY2=self.mGY2+self.mEY+self.vGN2[None,:]
         self.mAM=self.dCorrYAM*self.mY+\
-            ((1-(self.dCorrYAM**2))**0.5)*self.rng.normal(size=(self.iS,\
-                                                                self.iF))
+            ((1-(self.dCorrYAM**2))**0.5)*((self.rng.normal(size=(self.iS,\
+                                           self.iF))*self.mY.std())+\
+                                           self.mY.mean())
     
     def __match(self):
         self.vGN=np.empty(self.iP)
