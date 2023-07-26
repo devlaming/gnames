@@ -153,9 +153,9 @@ In case you have a question that is not resolved by going over the preceding two
 
 ## Citation
 
-If you use the software, please cite the manuscript in which `gnames` is described:
+If you use the software, please cite the manuscript in which `gnames` was first described and utilised:
 
-*tba*
+[H. van Kippersluis, P. Biroli, R.D. Pereira, T.J. Galama, S. von Hinke, S.F.W. Meddens, D. Muslimova, E.A.W. Slob, R. de Vlaming, C.A. Rietveld (2023). Overcoming attenuation bias in regressions using polygenic indices. *Nat Commun* **14**, 4473](https://doi.org/10.1038/s41467-023-40069-4)
 
 ## License
 
